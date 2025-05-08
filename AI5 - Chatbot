@@ -1,0 +1,645 @@
+Code:
+
+def main():
+    # Sample data
+    low_cost_cities = ['bangkok', 'hanoi', 'lisbon']
+    high_cost_cities = ['zurich', 'oslo', 'new york']
+    famous_food = {
+        'pizza': 'italy',
+        'sushi': 'japan',
+        'tacos': 'mexico',
+        'croissant': 'france'
+    }
+    popular_sports = {
+        'bangkok': ['muay thai', 'football'],
+        'hanoi': ['badminton', 'football'],
+        'lisbon': ['football', 'surfing'],
+        'zurich': ['skiing', 'football'],
+        'oslo': ['ski jumping', 'football'],
+        'new york': ['basketball', 'baseball']
+    }
+    currency = {
+        'bangkok': 'thai baht',
+        'hanoi': 'vietnamese dong',
+        'lisbon': 'euro',
+        'zurich': 'swiss franc',
+        'oslo': 'norwegian krone',
+        'new york': 'us dollar'
+    }
+    city_details = {
+        'bangkok': {
+            'description': 'Capital of Thailand, known for vibrant street life and ornate temples.',
+            'attractions': ['Grand Palace', 'Wat Arun', 'Chatuchak Market'],
+            'price': 'low',
+            'food': ['Pad Thai', 'Tom Yum Soup', 'Mango Sticky Rice'],
+            'language': 'Thai',
+            'clothing': 'Light, breathable fabrics; modest attire for temples',
+            'sports': ['Muay Thai', 'football']
+        },
+        'hanoi': {
+            'description': 'Capital of Vietnam, famous for its centuries-old architecture and rich culture.',
+            'attractions': ['Hoan Kiem Lake', 'Old Quarter', 'Temple of Literature'],
+            'price': 'low',
+            'food': ['Pho', 'Bun Cha', 'Egg Coffee'],
+            'language': 'Vietnamese',
+            'clothing': 'Light, comfortable cottons',
+            'sports': ['Badminton', 'football']
+        },
+        'lisbon': {
+            'description': 'Portugal’s coastal capital, known for its hilly, coastal scenery and pastel-colored buildings.',
+            'attractions': ['Belém Tower', 'Jerónimos Monastery', 'Alfama District'],
+            'price': 'low',
+            'food': ['Bacalhau', 'Pastel de Nata', 'Sardinhas'],
+            'language': 'Portuguese',
+            'clothing': 'Casual European attire',
+            'sports': ['Football', 'surfing']
+        },
+        'zurich': {
+            'description': 'Switzerland’s largest city, a global financial hub with well-preserved medieval old town.',
+            'attractions': ['Lake Zurich', 'Old Town', 'Swiss National Museum'],
+            'price': 'high',
+            'food': ['Fondue', 'Zürcher Geschnetzeltes'],
+            'language': 'German',
+            'clothing': 'Warm layers; smart-casual',
+            'sports': ['Skiing', 'football']
+        },
+        'oslo': {
+            'description': 'Norway’s capital, surrounded by green hills and situated at the head of Oslofjord.',
+            'attractions': ['Vigeland Park', 'Oslo Opera House', 'Akershus Fortress'],
+            'price': 'high',
+            'food': ['Rakfisk', 'Kjøttkaker'],
+            'language': 'Norwegian',
+            'clothing': 'Cold-weather gear',
+            'sports': ['Ski jumping', 'football']
+        },
+        'new york': {
+            'description': 'The most populous U.S. city, famed for its skyline, Broadway and cultural diversity.',
+            'attractions': ['Statue of Liberty', 'Central Park', 'Times Square'],
+            'price': 'high',
+            'food': ['Hot Dog', 'Bagel', 'Cheesecake'],
+            'language': 'English',
+            'clothing': 'Seasonal US fashion',
+            'sports': ['Basketball', 'baseball']
+        }
+    }
+
+    print("Welcome to Travel Expert Chatbot!")
+    print("Options:")
+    print("  low cost city")
+    print("  high cost city")
+    print("  famous food <food name>")
+    print("  popular sports in <city>")
+    print("  currency of <city>")
+    print("  exit")
+
+    while True:
+        cmd = input("\nEnter option or city name: ").strip().lower()
+
+        if cmd == 'low cost city':
+            print("Low-cost cities:", ", ".join(c.title() for c in low_cost_cities))
+
+        elif cmd == 'high cost city':
+            print("High-cost cities:", ", ".join(c.title() for c in high_cost_cities))
+
+        elif cmd.startswith('famous food '):
+            food = cmd[len('famous food '):].strip()
+            country = famous_food.get(food)
+            if country:
+                print(f"{food.title()} is famously from {country.title()}.")
+            else:
+                print(f"Sorry, I don't have info about '{food}'.")
+
+        elif cmd.startswith('popular sports in '):
+            city = cmd[len('popular sports in '):].strip()
+            sports = popular_sports.get(city)
+            if sports:
+                print(f"Popular sports in {city.title()}: {', '.join(s.title() for s in sports)}")
+            else:
+                print(f"Sorry, I don't have sports info for '{city}'.")
+
+        elif cmd.startswith('currency of '):
+            city = cmd[len('currency of '):].strip()
+            curr = currency.get(city)
+            if curr:
+                print(f"The currency of {city.title()} is {curr.title()}.")
+            else:
+                print(f"Sorry, I don't have currency info for '{city}'.")
+
+        # If user just enters a city name, show full details
+        elif cmd in city_details:
+            info = city_details[cmd]
+            print(f"\nInformation about {cmd.title()}:")
+            print(" Description:", info['description'])
+            print(" Attractions:", ", ".join(info['attractions']))
+            print(" Price category:", info['price'].title())
+            print(" Famous foods:", ", ".join(info['food']))
+            print(" Language:", info['language'])
+            print(" Clothing:", info['clothing'])
+            print(" Popular sports:", ", ".join(info['sports']))
+            print()
+
+        elif cmd == 'exit':
+            print("Goodbye!")
+            break
+
+        else:
+            print("Invalid option. Please choose from the menu or enter a known city name.")
+
+if __name__ == '__main__':
+    main()
+
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/chatbot.py"
+Welcome to Travel Expert Chatbot!
+Options:
+  low cost city
+  high cost city
+  famous food <food name>
+  popular sports in <city>
+  currency of <city>
+  exit
+
+Enter option or city name: new york
+
+Information about New York:
+ Description: The most populous U.S. city, famed for its skyline, Broadway and cultural diversity.
+ Attractions: Statue of Liberty, Central Park, Times Square
+ Price category: High
+ Famous foods: Hot Dog, Bagel, Cheesecake
+ Language: English
+ Clothing: Seasonal US fashion
+ Popular sports: Basketball, baseball
+
+
+Enter option or city name: popular sports in bangkok
+Popular sports in Bangkok: Muay Thai, Football
+
+Enter option or city name: famous food tacos
+Tacos is famously from Mexico.
+
+Enter option or city name: currency of oslo
+The currency of Oslo is Norwegian Krone.
+
+Enter option or city name: exit
+Goodbye!
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI>
+
+
+Explanation of Code Logic:
+1. Data Definitions
+python
+Copy
+Edit
+    # Sample data
+    low_cost_cities = ['bangkok', 'hanoi', 'lisbon']
+    high_cost_cities = ['zurich', 'oslo', 'new york']
+low_cost_cities / high_cost_cities
+Lists of cities categorized by their typical travel cost.
+
+python
+Copy
+Edit
+    famous_food = {
+        'pizza': 'italy',
+        'sushi': 'japan',
+        'tacos': 'mexico',
+        'croissant': 'france'
+    }
+famous_food
+Maps a food name → country most associated with it.
+
+python
+Copy
+Edit
+    popular_sports = {
+        'bangkok': ['muay thai', 'football'],
+        # …and so on for each city
+    }
+    currency = {
+        'bangkok': 'thai baht',
+        # …etc.
+    }
+popular_sports / currency
+Maps each city → list of its popular sports or its local currency.
+
+python
+Copy
+Edit
+    city_details = {
+      'bangkok': {
+          'description': 'Capital of Thailand, known for vibrant street life and ornate temples.',
+          'attractions': ['Grand Palace', 'Wat Arun', 'Chatuchak Market'],
+          'price': 'low',
+          'food': ['Pad Thai', 'Tom Yum Soup', 'Mango Sticky Rice'],
+          'language': 'Thai',
+          'clothing': 'Light, breathable fabrics; modest attire for temples',
+          'sports': ['Muay Thai', 'football']
+      },
+      # …entries for other cities…
+    }
+city_details
+A nested dict storing every piece of “full profile” information for each city:
+
+description (brief overview)
+
+attractions (list of top sights)
+
+price (“low” or “high”)
+
+food (list of famous dishes)
+
+language (primary language)
+
+clothing (recommended attire)
+
+sports (popular local sports)
+
+2. Welcome & Menu Prompt
+python
+Copy
+Edit
+    print("Welcome to Travel Expert Chatbot!")
+    print("Options:")
+    print("  low cost city")
+    print("  high cost city")
+    print("  famous food <food name>")
+    print("  popular sports in <city>")
+    print("  currency of <city>")
+    print("  exit")
+Greets the user and displays the fixed set of commands they can type.
+
+3. Main Input Loop
+python
+Copy
+Edit
+    while True:
+        cmd = input("\nEnter option or city name: ").strip().lower()
+Infinite loop to continually accept user input until they type “exit.”
+
+strip().lower() normalizes whitespace and capitalization.
+
+4. Handling Each Command
+4.1 Low-Cost Cities
+python
+Copy
+Edit
+        if cmd == 'low cost city':
+            print("Low-cost cities:", ", ".join(c.title() for c in low_cost_cities))
+If the user types exactly “low cost city,” we title-case and join the low_cost_cities list.
+
+4.2 High-Cost Cities
+python
+Copy
+Edit
+        elif cmd == 'high cost city':
+            print("High-cost cities:", ", ".join(c.title() for c in high_cost_cities))
+Same pattern for “high cost city.”
+
+4.3 Famous Food
+python
+Copy
+Edit
+        elif cmd.startswith('famous food '):
+            food = cmd[len('famous food '):].strip()
+            country = famous_food.get(food)
+            if country:
+                print(f"{food.title()} is famously from {country.title()}.")
+            else:
+                print(f"Sorry, I don't have info about '{food}'.")
+Check prefix: does the input begin with “famous food ”?
+
+Extract the food name by slicing off the command text.
+
+Lookup in famous_food.
+
+Respond with a formatted sentence or an apology if unknown.
+
+4.4 Popular Sports
+python
+Copy
+Edit
+        elif cmd.startswith('popular sports in '):
+            city = cmd[len('popular sports in '):].strip()
+            sports = popular_sports.get(city)
+            if sports:
+                print(f"Popular sports in {city.title()}: {', '.join(s.title() for s in sports)}")
+            else:
+                print(f"Sorry, I don't have sports info for '{city}'.")
+Same logic as above, but for the “popular sports in <city>” command. Uses popular_sports.
+
+4.5 Currency
+python
+Copy
+Edit
+        elif cmd.startswith('currency of '):
+            city = cmd[len('currency of '):].strip()
+            curr = currency.get(city)
+            if curr:
+                print(f"The currency of {city.title()} is {curr.title()}.")
+            else:
+                print(f"Sorry, I don't have currency info for '{city}'.")
+Handles “currency of <city>” by slicing, looking up in currency, and printing.
+
+5. Full-Profile City Lookup
+python
+Copy
+Edit
+        elif cmd in city_details:
+            info = city_details[cmd]
+            print(f"\nInformation about {cmd.title()}:")
+            print(" Description:", info['description'])
+            print(" Attractions:", ", ".join(info['attractions']))
+            print(" Price category:", info['price'].title())
+            print(" Famous foods:", ", ".join(info['food']))
+            print(" Language:", info['language'])
+            print(" Clothing:", info['clothing'])
+            print(" Popular sports:", ", ".join(info['sports']))
+            print()
+Check if the raw input matches any key in city_details.
+
+Retrieve that city’s detail-dict.
+
+Print each field in a human-readable, labeled format.
+
+6. Exit Command
+python
+Copy
+Edit
+        elif cmd == 'exit':
+            print("Goodbye!")
+            break
+If the user types “exit,” we say farewell and break out of the loop, ending the program.
+
+7. Fallback for Unrecognized Input
+python
+Copy
+Edit
+        else:
+            print("Invalid option. Please choose from the menu or enter a known city name.")
+Catches any input that didn’t match one of the above patterns, reminding the user of valid choices.
+
+8. Entrypoint Guard
+python
+Copy
+Edit
+if __name__ == '__main__':
+    main()
+Ensures main() runs only when you execute this script directly, not if you import it into another module.
+
+Summary of Flow
+Load all your reference data (city lists, foods, sports, currencies, detailed profiles).
+
+Display a brief menu of commands.
+
+Loop forever:
+
+Read user input.
+
+Normalize it to lowercase and strip whitespace.
+
+Match it against:
+
+Fixed commands (low cost city, high cost city, etc.).
+
+Prefixed queries (famous food …, popular sports in …, currency of …).
+
+Raw city names for the full profile.
+
+exit to end.
+
+Respond appropriately or show an error message.
+
+Terminate when the user types exit.
+
+Each function or block is small, focused on one task—making the program easy to read, maintain, and extend.
+
+
+Theory:
+
+1. Rule-Based Chatbot Architecture
+Deterministic, “If-Then” Rules
+
+The bot’s logic is a flat sequence of if/elif/else checks on the user’s input string.
+
+Each rule corresponds to one intent (e.g. “low cost city”), with very simple entity extraction (e.g. slicing off “famous food ” to get the food name).
+
+Finite-State / REPL Loop
+
+The while True loop reads one user command per iteration, processes it, and either replies or exits.
+
+This is effectively a tiny read–eval–print loop, typical of console UIs and simple dialogue systems.
+
+Menu-Driven Interaction
+
+By listing the supported commands up front, the bot constrains user input to a known vocabulary, avoiding the need for natural-language parsing or ML.
+
+2. Input Normalization & Parsing
+strip().lower()
+
+Trims whitespace and folds everything to lowercase so that “ Low Cost CITY ” matches the rule for "low cost city".
+
+Prefix Matching
+
+Commands that carry parameters (food or city names) use str.startswith(...) checks, then slice off the known prefix to isolate the parameter.
+
+This is a basic form of intent + slot extraction:
+
+Intent = “famous food”
+
+Slot = the food name that follows.
+
+Fallback / Error Handling
+
+An else at the end catches any unrecognized inputs, guiding the user back to the menu or valid city names.
+
+3. Data-Driven Responses
+Python Dictionaries & Lists
+
+All knowledge lives in simple built-in structures:
+
+Lists (low_cost_cities, high_cost_cities) for enumeration-style answers.
+
+Dicts (famous_food, popular_sports, currency, city_details) for direct key→value lookups.
+
+Separation of Data from Logic
+
+Keeping your city profiles and command logic separate makes it easy to add or update cities, foods, or other facts without touching the control flow.
+
+4. Dialogue Management
+Single‐Turn Responses
+
+Each user input elicits exactly one reply; there is no multi‐turn slot‐filling or stateful “form” filling.
+
+This drastically simplifies the code at the cost of limited conversational depth.
+
+Intent Prioritization
+
+The order of the if/elif chain determines which intents “win” if multiple rules could apply.
+
+(For example, a city name that also starts with “currency of …” would be caught by the currency rule first.)
+
+5. Extensibility & Maintainability
+Adding a New Command
+
+Define a new test in the if/elif chain (e.g. elif cmd == 'weather in <city>')
+
+Hook it up to a lookup or API call in a new dictionary or helper function.
+
+Scaling Data
+
+For larger datasets you’d likely move from in-memory dicts to an external JSON file or lightweight database—but the same lookup patterns apply.
+
+Towards More “Intelligent” Bots
+
+You could replace the simple string matching with a small NLP pipeline (tokenization + intent classifier) or integrate a rules engine to manage dozens of intents more cleanly.
+
+6. Why This Approach?
+Simplicity: No external libraries (beyond standard input/print), no classes or complex frameworks.
+
+Clarity: Control flow mirrors the menu description one-to-one.
+
+Predictability: Deterministic responses mean you always know exactly how the bot will behave.
+
+The Big-Picture
+This chatbot exemplifies a rule-based dialogue system:
+
+User says something.
+
+Bot normalizes the text to a canonical form.
+
+Bot matches the input against a fixed set of rules (intents).
+
+Bot consults its internal data tables (lists/dicts) to formulate a reply.
+
+Bot responds and loops back for the next user input.
+
+While limited compared to modern NLP‐powered assistants, this pattern remains widely used for menu-driven kiosks, IVR (phone) systems, and simple FAQ bots, where predictable, fast, and lightweight interactions are paramount.
+
+
+1. Broad Categories of Chatbots
+1.1 Rule-Based (Reflective) Chatbots
+Architecture: a fixed set of “if-then” patterns or decision trees.
+
+Deterministic: given the same input, always the same output.
+
+Pros: predictable, easy to debug, fast.
+
+Cons: brittle—fails on any input outside its script, poor scalability.
+
+1.2 Retrieval-Based Chatbots
+Architecture: maintain a large library of possible responses, indexed by intent or similarity.
+
+Matching: choose the best canned response by keyword or vector similarity (e.g., TF-IDF, embeddings).
+
+Deterministic or Stochastic: can be either—simple lookup is deterministic; sampling among top-k matches is non-deterministic.
+
+Pros: ensures grammatical correctness, can cover many topics if library is large.
+
+Cons: limited to pre-written replies, may feel stale or inconsistent.
+
+1.3 Generative (Neural) Chatbots
+Architecture: end-to-end neural networks (seq2seq, Transformers, GPT-style).
+
+Non-deterministic: even with the same prompt, they can generate different continuations if sampling.
+
+Pros: highly flexible, can generalize to unseen queries, maintain coherence across turns.
+
+Cons: prone to “hallucinations,” unpredictable errors, heavy compute cost.
+
+2. Deterministic vs. Non-Deterministic
+Deterministic: fixed mapping from input to output.
+
+Rule-based trees, lookup tables, or retrieval with a strict “highest-score” policy.
+
+Always reproducible—ideal for settings where consistency and compliance matter (e.g., banking IVR).
+
+Non-Deterministic: involves randomness or learned probability distributions.
+
+Generative models sampling from a probability distribution over tokens.
+
+Retrieval bots that randomly choose among several equally good matches.
+
+Provide variety and more “human-like” spontaneity, but risk inconsistency.
+
+3. Goal-Oriented vs. Open-Domain
+Goal-Oriented (Transactional) Chatbots
+
+Designed to accomplish a narrow task (book a flight, reset a password).
+
+Often pipeline-driven:
+
+NLU: classify intent + extract slots
+
+Dialogue Manager: track state, decide next action
+
+NLG: generate a templated response
+
+Highly deterministic, performance measured by task success rate.
+
+Open-Domain (Conversational) Chatbots
+
+Aim to sustain free-flowing dialogue on any topic.
+
+More likely to use retrieval or generative architectures.
+
+Evaluation is subjective (coherence, engagement, persona consistency).
+
+4. Core Components of an Intelligent Chatbot
+Natural Language Understanding (NLU)
+
+Intent Classification: What does the user want?
+
+Entity / Slot Extraction: Which specifics (dates, names, locations)?
+
+Dialogue Management
+
+State Tracking: remembers previous turns and slot values.
+
+Policy: determines the next action (ask a question, provide info, call an API).
+
+Natural Language Generation (NLG)
+
+Template-Based: fill in slots in pre-written sentences (deterministic).
+
+Neural Generation: compose new text token by token (non-deterministic).
+
+Knowledge / Backend
+
+APIs, databases, search indexes that supply factual or personalized information.
+
+5. Search-Based vs. Learning-Based
+Search-Based (rule or retrieval):
+
+Limited “memory footprint,” easier to control.
+
+Learning-Based (statistical, neural):
+
+Continuously improve from data, adaptable to new domains—but require large corpora and careful safety checks.
+
+6. Evaluation Metrics
+Task Success Rate (for goal-oriented bots)
+
+Perplexity / BLEU / ROUGE (for generative replies)
+
+Human Judgments: fluency, coherence, helpfulness, engagement
+
+Consistency & Safety: does the bot contradict itself or produce harmful content?
+
+7. Hybrid & Retrieval-Augmented Generation (RAG)
+Hybrid Systems combine deterministic pipelines for critical tasks with generative modules for chit-chat.
+
+RAG: retrieve relevant documents or facts and condition a neural generator on them—balances factual accuracy with flexibility.
+
+In Summary
+Rule-Based ≈ deterministic, simple, brittle
+
+Retrieval-Based ≈ semi-deterministic, scalable with content, but limited to canned replies
+
+Generative ≈ non-deterministic, highly flexible, but unpredictable
+
+Goal-Oriented focuses on task completion with tight state control
+
+Open-Domain focuses on natural conversation and engagement
+
+Modern practice often blends techniques—e.g. a retrieval layer to ground responses and a generative layer to compose smooth, varied text.
