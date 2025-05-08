@@ -1,0 +1,610 @@
+Code:
+
+import heapq
+
+def heuristic(state, goal, N):
+    """
+    Compute the Manhattan distance between `state` and `goal`.
+    `state` and `goal` are flat tuples of length N*N, with '_' representing the blank.
+    """
+    dist = 0
+    for i, tile in enumerate(state):
+        if tile != '_':
+            goal_idx = goal.index(tile)
+            x1, y1 = divmod(i, N)
+            x2, y2 = divmod(goal_idx, N)
+            dist += abs(x1 - x2) + abs(y1 - y2)
+    return dist
+
+def get_neighbors(state, N):
+    """
+    Return a list of all states reachable from `state` by sliding one tile into the blank.
+    """
+    neighbors = []
+    zero_idx = state.index('_')
+    x, y = divmod(zero_idx, N)
+    for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:  # up, down, left, right
+        nx, ny = x+dx, y+dy
+        if 0 <= nx < N and 0 <= ny < N:
+            new_idx = nx * N + ny
+            new_state = list(state)
+            # swap blank with neighbor
+            new_state[zero_idx], new_state[new_idx] = new_state[new_idx], new_state[zero_idx]
+            neighbors.append(tuple(new_state))
+    return neighbors
+
+def reconstruct_path(came_from, current):
+    """
+    Walk backwards from `current` to the start using the came_from map.
+    """
+    path = [current]
+    while current in came_from:
+        current = came_from[current]
+        path.append(current)
+    return path[::-1]
+
+def a_star(start, goal, N):
+    """
+    A* search from `start` to `goal` on an N×N sliding puzzle.
+    Returns the list of states from start to goal, or (None, None) if unsolvable.
+    """
+    open_heap = []
+    heapq.heappush(open_heap, (heuristic(start, goal, N), 0, start))
+    came_from = {}
+    g_score = {start: 0}
+
+    while open_heap:
+        f, g, current = heapq.heappop(open_heap)
+        if current == goal:
+            return reconstruct_path(came_from, current), g_score
+
+        for nbr in get_neighbors(current, N):
+            tentative_g = g_score[current] + 1
+            if nbr not in g_score or tentative_g < g_score[nbr]:
+                g_score[nbr] = tentative_g
+                came_from[nbr] = current
+                f_score = tentative_g + heuristic(nbr, goal, N)
+                heapq.heappush(open_heap, (f_score, tentative_g, nbr))
+
+    return None, None
+
+def main():
+    N = int(input("Enter grid size N (e.g. 3 for 8-puzzle): "))
+    print("Enter the start state, row by row, with spaces (use _ for blank):")
+    start_entries = []
+    for _ in range(N):
+        start_entries.extend(input().split())
+    start = tuple(start_entries)
+
+    print("Enter the goal state, row by row, with spaces (use _ for blank):")
+    goal_entries = []
+    for _ in range(N):
+        goal_entries.extend(input().split())
+    goal = tuple(goal_entries)
+
+    path, g_score = a_star(start, goal, N)
+    if path:
+        print(f"\nSolved in {len(path)-1} moves. Steps:\n")
+        for depth, state in enumerate(path):
+            # print the board
+            for i in range(N):
+                print(state[i*N:(i+1)*N])
+            # compute and print h, g, f
+            h = heuristic(state, goal, N)
+            g = depth
+            f = g + h
+            print(f"h = {h}, g = {g}, f = {f}\n")
+    else:
+        print("No solution found.")
+
+if __name__ == '__main__':
+    main()
+
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/astar.py"
+Enter grid size N (e.g. 3 for 8-puzzle): 3
+Enter the start state, row by row, with spaces (use _ for blank):
+1 2 3
+5 _ 6
+4 7 8
+Enter the goal state, row by row, with spaces (use _ for blank):
+1 2 3 
+4 5 6
+7 8 _
+
+Solved in 4 moves. Steps:
+
+('1', '2', '3')
+('5', '_', '6')
+('4', '7', '8')
+h = 4, g = 0, f = 4
+
+('1', '2', '3')
+('_', '5', '6')
+('4', '7', '8')
+h = 3, g = 1, f = 4
+
+('1', '2', '3')
+('4', '5', '6')
+('_', '7', '8')
+h = 2, g = 2, f = 4
+
+('1', '2', '3')
+('4', '5', '6')
+('7', '_', '8')
+h = 1, g = 3, f = 4
+
+('1', '2', '3')
+('4', '5', '6')
+('7', '8', '_')
+h = 0, g = 4, f = 4
+
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/astar.py"
+Enter grid size N (e.g. 3 for 8-puzzle): 3
+Enter the start state, row by row, with spaces (use _ for blank):
+1 2 3
+8 _ 4
+7 6 5
+Enter the goal state, row by row, with spaces (use _ for blank):
+2 8 1
+_ 4 3
+7 6 5
+
+Solved in 9 moves. Steps:
+
+('1', '2', '3')
+('8', '_', '4')
+('7', '6', '5')
+h = 7, g = 0, f = 7
+
+('1', '_', '3')
+('8', '2', '4')
+('7', '6', '5')
+h = 8, g = 1, f = 9
+
+('_', '1', '3')
+('8', '2', '4')
+('7', '6', '5')
+h = 7, g = 2, f = 9
+
+('8', '1', '3')
+('_', '2', '4')
+('7', '6', '5')
+h = 6, g = 3, f = 9
+
+('8', '1', '3')
+('2', '_', '4')
+('7', '6', '5')
+h = 5, g = 4, f = 9
+
+('8', '1', '3')
+('2', '4', '_')
+('7', '6', '5')
+h = 4, g = 5, f = 9
+
+('8', '1', '_')
+('2', '4', '3')
+('7', '6', '5')
+h = 3, g = 6, f = 9
+
+('8', '_', '1')
+('2', '4', '3')
+('7', '6', '5')
+h = 2, g = 7, f = 9
+
+('_', '8', '1')
+('2', '4', '3')
+('7', '6', '5')
+h = 1, g = 8, f = 9
+
+('2', '8', '1')
+('_', '4', '3')
+('7', '6', '5')
+h = 0, g = 9, f = 9
+
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/astar.py"
+Enter grid size N (e.g. 3 for 8-puzzle): 4    
+Enter the start state, row by row, with spaces (use _ for blank):
+5 1 3 4
+2 _ 7 8
+9 6 10 12
+13 14 11 15
+Enter the goal state, row by row, with spaces (use _ for blank):
+1 2 3 4
+5 6 7 8
+9 10 11 12
+13 14 15 _
+
+Solved in 8 moves. Steps:
+
+('5', '1', '3', '4')
+('2', '_', '7', '8')
+('9', '6', '10', '12')
+('13', '14', '11', '15')
+h = 8, g = 0, f = 8
+
+('5', '1', '3', '4')
+('_', '2', '7', '8')
+('9', '6', '10', '12')
+('13', '14', '11', '15')
+h = 7, g = 1, f = 8
+
+('_', '1', '3', '4')
+('5', '2', '7', '8')
+('9', '6', '10', '12')
+('13', '14', '11', '15')
+h = 6, g = 2, f = 8
+
+('1', '_', '3', '4')
+('5', '2', '7', '8')
+('9', '6', '10', '12')
+('13', '14', '11', '15')
+h = 5, g = 3, f = 8
+
+('1', '2', '3', '4')
+('5', '_', '7', '8')
+('9', '6', '10', '12')
+('13', '14', '11', '15')
+h = 4, g = 4, f = 8
+
+('1', '2', '3', '4')
+('5', '6', '7', '8')
+('9', '_', '10', '12')
+('13', '14', '11', '15')
+h = 3, g = 5, f = 8
+
+('1', '2', '3', '4')
+('5', '6', '7', '8')
+('9', '10', '_', '12')
+('13', '14', '11', '15')
+h = 2, g = 6, f = 8
+
+('1', '2', '3', '4')
+('5', '6', '7', '8')
+('9', '10', '11', '12')
+('13', '14', '_', '15')
+h = 1, g = 7, f = 8
+
+('1', '2', '3', '4')
+('5', '6', '7', '8')
+('9', '10', '11', '12')
+('13', '14', '15', '_')
+h = 0, g = 8, f = 8
+
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/astar.py"
+Enter grid size N (e.g. 3 for 8-puzzle): 4
+Enter the start state, row by row, with spaces (use _ for blank):
+_ 1 2 3
+4 5 6 7
+8 9 10 11
+12 13 14 15
+Enter the goal state, row by row, with spaces (use _ for blank):
+1 5 2 3
+4 _ 6 7
+8 9 10 11
+12 13 14 15
+
+Solved in 2 moves. Steps:
+
+('_', '1', '2', '3')
+('4', '5', '6', '7')
+('8', '9', '10', '11')
+('12', '13', '14', '15')
+h = 2, g = 0, f = 2
+
+('1', '_', '2', '3')
+('4', '5', '6', '7')
+('8', '9', '10', '11')
+('12', '13', '14', '15')
+h = 1, g = 1, f = 2
+
+('1', '5', '2', '3')
+('4', '_', '6', '7')
+('8', '9', '10', '11')
+('12', '13', '14', '15')
+h = 0, g = 2, f = 2
+
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI>
+
+
+
+Explanation of code Logic:
+
+1. Imports
+  
+    import heapq
+    heapq gives us a binary min-heap implementation in Python.
+  
+  - We’ll store our “open set” of frontier states as a heap to always pull out the state with the lowest f-score (f = g + h) in O(log n) time.
+
+2. Heuristic Function
+
+      def heuristic(state, goal, N):
+          """
+          Compute the Manhattan distance between `state` and `goal`.
+          `state` and `goal` are flat tuples of length N*N, with '_' representing the blank.
+          """
+          dist = 0
+          for i, tile in enumerate(state):
+              if tile != '_':
+                  goal_idx = goal.index(tile)
+                  x1, y1 = divmod(i, N)
+                  x2, y2 = divmod(goal_idx, N)
+                  dist += abs(x1 - x2) + abs(y1 - y2)
+          return dist
+  
+  - Parameters
+    -> state: a flat tuple of length N², e.g. ('1','2','_','3','4','5','6','7','8')
+    -> goal: another flat tuple describing the target arrangement
+    -> N: the row/column size (3 for an 8-puzzle)
+  
+  - Loop over every tile
+  
+      for i, tile in enumerate(state):
+  
+  - Skip the blank
+  
+      If tile == '_' we don’t count it in our distance sum.
+  
+  - Find where this tile belongs
+  
+      goal_idx = goal.index(tile) locates its index in the goal tuple.
+      Compute (row, col)
+      divmod(i, N) → (row, col) of this tile in the current state
+      divmod(goal_idx, N) → its position in the goal
+  
+  - Accumulate Manhattan distance
+  
+      abs(x1–x2) + abs(y1–y2) measures how many moves it would take to slide this tile into place ignoring other tiles.
+  
+  - Return total dist as h(state).
+
+3. Neighbor Generation
+
+        def get_neighbors(state, N):
+            """
+            Return a list of all states reachable from `state` by sliding one tile into the blank.
+            """
+            neighbors = []
+            zero_idx = state.index('_')
+            x, y = divmod(zero_idx, N)
+  
+  - Locate the blank ('_') in the flat tuple.
+  - Convert its index to 2D coordinates (x, y).
+  
+        for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:  # up, down, left, right
+            nx, ny = x+dx, y+dy
+            if 0 <= nx < N and 0 <= ny < N:
+                new_idx = nx * N + ny
+                new_state = list(state)
+                # swap blank with neighbor
+                new_state[zero_idx], new_state[new_idx] = new_state[new_idx], new_state[zero_idx]
+                neighbors.append(tuple(new_state))
+        return neighbors
+  
+  - Try each direction
+  
+        (dx,dy) = offsets for up, down, left, right.
+  
+  - Check bounds
+  - Ensure (nx,ny) stays within the N×N grid.
+  - Compute flat index
+  
+        new_idx = nx * N + ny
+  
+  - Swap blank with the adjacent tile:
+  - Turn state into a mutable list
+  
+        new_state[zero_idx], new_state[new_idx] = …
+  
+  - Convert back to tuple and add to neighbors.
+  - Return all legal neighbor states.
+
+4. Path Reconstruction
+
+      def reconstruct_path(came_from, current):
+          """
+          Walk backwards from `current` to the start using the came_from map.
+          """
+          path = [current]
+          while current in came_from:
+              current = came_from[current]
+              path.append(current)
+          return path[::-1]
+  
+  - came_from is a dict mapping each visited state → the state we came from.
+  - Starting at the goal (current), we follow these back-pointers until we reach the start.
+  - We collect states in reverse, then return the reversed list so it goes start→…→goal.
+
+5. A* Search
+
+      def a_star(start, goal, N):
+          """
+          A* search from `start` to `goal` on an N×N sliding puzzle.
+          Returns (path_list, g_score_map), or (None, None) if no solution.
+          """
+          open_heap = []
+          heapq.heappush(open_heap, (heuristic(start, goal, N), 0, start))
+          came_from = {}
+          g_score = {start: 0}
+  
+  - Priority queue open_heap stores tuples (f_score, g_score, state).
+  - Seed it with the start state, whose
+  
+      g=0 (zero moves so far)
+      f = g + h(start)
+  
+  - came_from tracks back-pointers.
+  - g_score maps each state → best known distance from the start.
+  
+        while open_heap:
+            f, g, current = heapq.heappop(open_heap)
+            if current == goal:
+                return reconstruct_path(came_from, current), g_score
+  
+  - Pop the state with the lowest f from the heap.
+  - Goal test: if we’ve reached the goal, reconstruct and return the path and all g_score info.
+  
+          for nbr in get_neighbors(current, N):
+              tentative_g = g_score[current] + 1
+              if nbr not in g_score or tentative_g < g_score[nbr]:
+                  g_score[nbr] = tentative_g
+                  came_from[nbr] = current
+                  f_score = tentative_g + heuristic(nbr, goal, N)
+                  heapq.heappush(open_heap, (f_score, tentative_g, nbr))
+  
+  - Explore neighbors of current.
+  - Compute tentative distance tentative_g = g + 1 (each move costs 1).
+  - If this path is better (or first time we see nbr):
+  
+        Update g_score[nbr]
+        Record came_from[nbr] = current
+  
+  - Compute f = g + h(nbr) and push (f, g, nbr) onto the heap.
+  
+      return None, None
+  
+  - If the heap exhausts without finding the goal, return failure.
+
+6. main() — User I/O & Orchestration
+
+      def main():
+          N = int(input("Enter grid size N (e.g. 3 for 8-puzzle): "))
+  
+  - Read the puzzle dimension.
+  
+      print("Enter the start state, row by row, with spaces (use _ for blank):")
+      start_entries = []
+      for _ in range(N):
+          start_entries.extend(input().split())
+      start = tuple(start_entries)
+  
+  - Read N lines, each with N tokens (e.g. 1 2 3)
+  - Flatten into a single tuple of length N².
+  
+      print("Enter the goal state, row by row, with spaces (use _ for blank):")
+      goal_entries = []
+      for _ in range(N):
+          goal_entries.extend(input().split())
+      goal = tuple(goal_entries)
+  
+  - Same for the goal configuration, so you can solve arbitrary puzzles.
+  
+      path, g_score = a_star(start, goal, N)
+      if path:
+          print(f"\nSolved in {len(path)-1} moves. Steps:\n")
+          for depth, state in enumerate(path):
+              # print the board
+              for i in range(N):
+                  print(state[i*N:(i+1)*N])
+              # compute and print h, g, f
+              h = heuristic(state, goal, N)
+              g = depth
+              f = g + h
+              print(f"h = {h}, g = {g}, f = {f}\n")
+      else:
+          print("No solution found.")
+  
+  - Call a_star(...).
+  - If a path is returned:
+  - Print how many moves (len(path)−1).
+  - Enumerate over the path so depth = number of moves to reach that state.
+  - Display the board in N×N rows.
+  - Recompute and print its (h, g, f) values for insight into the search process.
+  - If no path, simply print failure.
+
+7. Entrypoint Guard
+
+      if __name__ == '__main__':
+          main()
+  
+  - Ensures main() only runs when this file is executed directly, not when imported.
+
+
+Theory:
+
+1. State‐Space Formulation
+  - Configuration as a State
+      -> Every arrangement of the N×N tiles (including the blank “_”) is a state.
+      -> We represent each state as a flat tuple of length N² so that it’s hashable and easy to compare.
+
+  - Initial and Goal States
+
+    -> Start: the user-provided arrangement.
+    -> Goal: another user-provided arrangement (often “1,2,…,N²−1,_”).
+
+  - Operators / Actions
+
+    -> Sliding the blank up, down, left or right (when legal) produces a new state.
+    -> Each action has uniform cost = 1 (one tile move).
+
+  - State‐Transition Graph
+
+    -> Implicit graph whose vertices are states and whose edges connect states reachable by one slide.
+    -> Because each move is reversible, this graph is undirected.
+
+2. Informed (Heuristic) Search & A*
+  - A* is a best-first search algorithm that uses both:
+
+    -> g(n): the exact cost to reach node n from the start,
+    -> h(n): an estimate of the cost from n to the goal.
+
+  - We prioritize exploration by the evaluation function
+
+    -> f(n) = g(n) + h(n)
+
+  - Open Set (Frontier)
+    -> A priority queue (min‐heap) keyed on f(n).
+    -> Always expands the node with lowest f.
+
+  - Closed Set
+    -> Implicitly tracked via our g_score map: once a state has a best g(n), we only update if we find a lower g(n).
+
+  - Optimality & Completeness
+  - Admissible heuristic (h(n) never overestimates the true cost) → A* is guaranteed to find an optimal path.
+
+  - Consistent (monotone) heuristic satisfies
+    -> h(n)≤c(n,n′)+h(n′)
+       for every action from n → n′.
+    -> Manhattan distance on the sliding puzzle is both admissible and consistent.
+
+3. Manhattan Distance Heuristic
+  - For each tile t in state:
+    -> Compute its current coordinates (x₁, y₁) and its goal coordinates (x₂, y₂).
+    -> The cost to move t into place if nothing blocked its path is
+       ∣x1−x2∣+∣y1−y2∣
+    -> Sum over all tiles (ignoring the blank) to get h(n).
+
+  - Why admissible?
+    -> Any tile must move at least |Δrow|+|Δcol| times, so we never overestimate.
+
+  - Why consistent?
+    -> Sliding the blank only changes one tile’s distance by ±1, so the triangle‐inequality bound holds.
+
+4. Priority Queue & Complexity
+  - Min‐Heap (heapq)
+    -> Insertion and extraction take O(log k) where k is the current frontier size.
+
+  - Time Complexity
+    -> A* runs in O(bᵈ) in the worst case, where b is the branching factor (≤4 here) and d is the solution depth—exponential in d.
+    -> However, a good heuristic massively prunes the search.
+
+  - Space Complexity
+    -> We store all generated states in g_score (and the heap), so memory can blow up for large N.
+    -> The 8-puzzle (3×3) has only 9!/2 ≈ 181 440 reachable states—manageable. Larger N quickly become intractable.
+
+5. Path Reconstruction
+  - Once A* pops the goal state:
+    -> We follow a back‐pointer map came_from[state] → predecessor until we hit the start.
+    -> Reversing that chain gives the optimal sequence of moves.
+
+6. Guarantees & Limitations
+  - Admissible + Consistent ⇒ Optimality and no need to re‐open closed nodes.
+  - Complete: If a solution exists, A* will find it (provided infinite memory).
+  - Heuristic Quality
+    -> Manhattan is simple and effective for sliding puzzles.
+    -> More advanced heuristics (pattern databases) can further speed up larger puzzles, but at the cost of extra precomputation.
+
+7. Why Avoid Classes Here?
+  - A procedural style with plain functions keeps the implementation concise and focused on the algorithm, making the flow of A* easier to trace for learning purposes.
