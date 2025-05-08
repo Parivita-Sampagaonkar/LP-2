@@ -1,0 +1,485 @@
+Code:
+
+from collections import deque
+
+def dfs_preorder(graph, node, visited, result):
+    """Visit node, then recursively visit each unvisited neighbor."""
+    visited.add(node)
+    result.append(node)
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_preorder(graph, nbr, visited, result)
+
+def dfs_inorder(graph, node, visited, result):
+    visited.add(node)
+    # — left subtree: recurse on the first unvisited neighbor, if any
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_inorder(graph, nbr, visited, result)
+            break
+    # — visit the node
+    result.append(node)
+    # — right subtree(s): recurse on any other unvisited neighbors
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_inorder(graph, nbr, visited, result)
+
+
+def dfs_postorder(graph, node, visited, result, parent=None):
+    """Recursively visit neighbors, then visit node."""
+    visited.add(node)
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_postorder(graph, nbr, visited, result, node)
+    result.append(node)
+
+def bfs_level_order(graph, start):
+    """Classic BFS using a queue to produce level-order."""
+    visited = {start}
+    queue = deque([start])
+    result = []
+    while queue:
+        node = queue.popleft()
+        result.append(node)
+        for nbr in graph[node]:
+            if nbr not in visited:
+                visited.add(nbr)
+                queue.append(nbr)
+    return result
+
+def main():
+    # 1) Build the graph
+    n = int(input("Enter number of vertices: "))
+    graph = {i: [] for i in range(1, n+1)}
+    e = int(input("Enter number of edges: "))
+    for _ in range(e):
+        u, v = map(int, input("Enter edge (u v): ").split())
+        graph[u].append(v)
+        graph[v].append(u)
+
+    # 2) Choose a starting (root) node
+    start = int(input("Enter start/root node: "))
+
+    # 3) Interactive menu
+    while True:
+        print("""
+Menu:
+1. DFS Preorder
+2. DFS Inorder
+3. DFS Postorder
+4. BFS Level Order
+5. Exit
+""")
+        choice = input("Enter your choice: ").strip()
+        if choice == '1':
+            vis, res = set(), []
+            dfs_preorder(graph, start, vis, res)
+            print("Preorder:", res)
+        elif choice == '2':
+            vis, res = set(), []
+            dfs_inorder(graph, start, vis, res)
+            print("Inorder: ", res)
+        elif choice == '3':
+            vis, res = set(), []
+            dfs_postorder(graph, start, vis, res)
+            print("Postorder:", res)
+        elif choice == '4':
+            lo = bfs_level_order(graph, start)
+            print("Level Order:", lo)
+        elif choice == '5':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice, try again.")
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+Explanation of code logic:
+
+
+1. Imports
+
+```python
+from collections import deque
+```
+
+    `collections.deque` is Python’s double-ended queue type.
+    We’ll use a `deque` for our BFS so that we can efficiently pop from the left (`popleft()`) and append on the right (`append()`).
+
+---
+
+2. DFS Preorder
+
+```python
+def dfs_preorder(graph, node, visited, result):
+    """Visit node, then recursively visit each unvisited neighbor."""
+    visited.add(node)
+    result.append(node)
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_preorder(graph, nbr, visited, result)
+```
+
+    1. Signature
+    
+        `graph`: adjacency list `dict`
+        `node`: the current vertex
+        `visited`: a `set` tracking which nodes we’ve already seen
+        `result`: a `list` collecting the traversal order
+    
+    2. `visited.add(node)`
+       Mark the current node as seen, so we don’t revisit it.
+    
+    3. `result.append(node)`
+       In preorder, we record the node *before* exploring its children.
+    
+    4. `for nbr in graph[node]:`
+       Loop over each neighbor in the adjacency list.
+    
+    5. `if nbr not in visited:`
+       Only dive into neighbors we haven’t yet seen.
+    
+    6. Recursive call
+       `dfs_preorder(graph, nbr, visited, result)`
+       This pushes deeper first—always exploring as far as possible down each branch.
+
+---
+
+3. DFS Inorder (on a DFS-tree)
+
+```python
+def dfs_inorder(graph, node, visited, result):
+    visited.add(node)
+    # Left subtree: recurse on the *first* unvisited neighbor, then break
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_inorder(graph, nbr, visited, result)
+            break
+
+    # Visit the node itself
+    result.append(node)
+
+    # Right subtree(s): recurse on *other* unvisited neighbors
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_inorder(graph, nbr, visited, result)
+```
+
+    1. Mark visited just like before.
+    
+    2. *Left subtree*
+    
+       - We scan neighbors in order, take the **first** one that’s unvisited, recurse there, then `break`.
+       - This simulates “go left once” in a binary-tree sense.
+    
+    3. *Visit node*
+    
+       - After that first child is fully explored, we record the current node.
+    
+    4. *Right subtree(s)*
+    
+       - Finally, we loop through **all remaining** neighbors.
+       - Any still-unvisited neighbor we treat as a “right” branch and recurse.
+
+
+---
+
+ 4. DFS Postorder
+
+```python
+def dfs_postorder(graph, node, visited, result, parent=None):
+    """Recursively visit neighbors, then visit node."""
+    visited.add(node)
+    for nbr in graph[node]:
+        if nbr not in visited:
+            dfs_postorder(graph, nbr, visited, result, node)
+    result.append(node)
+```
+
+    1. *Visit children first*
+    
+       - Loop over every neighbor; for each unvisited, recurse down.
+    
+    2. *Record node*
+    
+       - Only once **all** its descendants are done, append the node itself.
+
+---
+
+5. BFS Level-Order
+
+```python
+def bfs_level_order(graph, start):
+    visited = {start}
+    queue = deque([start])
+    result = []
+    while queue:
+        node = queue.popleft()
+        result.append(node)
+        for nbr in graph[node]:
+            if nbr not in visited:
+                visited.add(nbr)
+                queue.append(nbr)
+    return result
+```
+
+    1. *Initialization*
+    
+       - `visited = {start}`: mark the root.
+       - `queue = deque([start])`: seed the queue.
+       - `result = []`: will hold level-order.
+    
+    2. *Loop*
+    
+       * While `queue` not empty:
+    
+         1. `node = queue.popleft()`: take the oldest node.
+         2. `result.append(node)`: visit it.
+         3. Scan its neighbors: any unseen neighbor gets marked and **appended** to the **right** of the queue.
+    
+    3. Return the complete level-order list.
+
+---
+
+ 6. `main()` — putting it all together
+
+```python
+def main():
+    # 1) Build the graph
+    n = int(input("Enter number of vertices: "))
+    graph = {i: [] for i in range(1, n+1)}
+
+    e = int(input("Enter number of edges: "))
+    for _ in range(e):
+        u, v = map(int, input("Enter edge (u v): ").split())
+        graph[u].append(v)
+        graph[v].append(u)
+```
+
+    - Read how many vertices (`1` through `n`).
+    - Make an empty adjacency list: each key is a vertex, each value starts as an empty list.
+    - Read `e` edges. For each `(u, v)`, add `v` to `u`’s list and `u` to `v`’s—that makes it *undirected*.
+
+```python
+    # 2) Choose a starting (root) node
+    start = int(input("Enter start/root node: "))
+```
+
+    - Pick which node you’ll begin all traversals from.
+
+```python
+    # 3) Interactive menu
+    while True:
+        print("""
+Menu:
+1. DFS Preorder
+2. DFS Inorder
+3. DFS Postorder
+4. BFS Level Order
+5. Exit
+""")
+        choice = input("Enter your choice: ").strip()
+```
+
+    - Keeps looping until the user picks **Exit**.
+    - Displays options and reads the user’s pick.
+
+```python
+        if choice == '1':
+            vis, res = set(), []
+            dfs_preorder(graph, start, vis, res)
+            print("Preorder:", res)
+```
+
+    - For **DFS Preorder**, clear your `visited` set and `result` list, call the function, then **print** the resulting list.
+
+```python
+        elif choice == '2':
+            vis, res = set(), []
+            dfs_inorder(graph, start, vis, res)
+            print("Inorder: ", res)
+        elif choice == '3':
+            vis, res = set(), []
+            dfs_postorder(graph, start, vis, res)
+            print("Postorder:", res)
+```
+
+    - Same pattern for **Inorder** and **Postorder**.
+
+```python
+        elif choice == '4':
+            lo = bfs_level_order(graph, start)
+            print("Level Order:", lo)
+```
+
+    - For **BFS**, we don’t need to pass in `visited` or `result` — it’s all handled inside.
+
+```python
+        elif choice == '5':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice, try again.")
+```
+
+    - Exit cleanly on `5`, otherwise prompt again.
+
+---
+
+## 7. Entrypoint Guard
+
+```python
+if __name__ == '__main__':
+    main()
+```
+
+    - Ensures that if you run this file directly, `main()` fires off.
+    - If you import it as a module elsewhere, it won’t automatically start running.
+
+---
+
+Overall Flow
+
+1. *Build* the undirected graph from user input.
+2. *Pick* a start node.
+3. *Loop*: show menu → read choice → clear `visited`/`result` → run the chosen traversal → display the order.
+4. *Repeat* until the user picks Exit.
+
+Each DFS variant just changes *when* it records the node relative to recursing its neighbors:
+
+    - Preorder: before
+    - Inorder: between the first and the rest
+    - Postorder: after
+
+BFS uses a queue to visit layer by layer.
+
+
+
+
+Theory:
+
+1. Graph Fundamentals
+  - Vertex (Node)
+  A discrete “point” in the graph. In your code, these are the integers 1, 2, …, n.
+  
+  - Edge
+  A connection between two vertices. In an undirected graph each edge {u, v} implies traversal both ways (we add v to graph[u] and u to graph[v]).
+  
+  - Adjacency List Representation
+  We store for every vertex a Python list of its neighbors.
+  
+      graph = {
+        1: [2, 3],
+        2: [1, 3],
+        3: [1, 2, 4, 5],
+        4: [3],
+        5: [3],
+      }
+      Space: O(V + E)
+  
+  - Pro: Fast to iterate over a node’s neighbors; memory-efficient for sparse graphs.
+
+2. Traversal & the “Visited” Set
+  Whenever you traverse a graph that may contain cycles (or undirected back-edges), you need to remember which nodes you’ve already “seen” to avoid:
+  
+  Infinite loops (e.g., 1→2→1→2→…)
+  
+  Re-visiting nodes, which would pollute your traversal order and blow up your runtime.
+  
+  We use a Python set visited to record each node exactly once.
+
+3. Depth-First Search (DFS)
+  3.1 Idea
+  “Go as deep as you can from the start node, then back up and explore other branches.”
+  
+  - Implements a stack discipline (implicitly via recursion, or explicitly with your own stack).
+  
+  3.2 Recursion & Call Stack
+  - Each call dfs(node) pushes a new frame onto Python’s call stack.
+  
+  - visited lives across calls, so once you mark a node, no future call will revisit it.
+  
+  - When there are no more unvisited neighbors, recursion unwinds (pops back up).
+  
+  3.3 Traversal Orders (Tree Analogy)
+    - Although graphs are more general, DFS on a connected graph induces a spanning tree. On that tree you can define:
+    
+      - Preorder
+      
+        Record before visiting children.
+        
+        Typical for topological sorts, copying tree.
+    
+      - Inorder (binary-tree notion borrowed)
+      
+        Record between first child and the rest.
+        
+        In a true binary tree this is “left → root → right.”
+        
+        On a general graph we simulated this by “first neighbor → root → remaining neighbors.”
+    
+      - Postorder
+      
+        Record after all children are done.
+        
+        Useful for deleting trees, evaluating expression trees.
+    
+    - All three share the same core DFS mechanics; they only differ on when you append the current node to result.
+
+
+4. Breadth-First Search (BFS)
+  - 4.1 Idea
+    “Visit all nodes at distance 0 (the start), then all at distance 1, then distance 2, …”
+    
+    Implements a FIFO queue discipline.
+    
+  - 4.2 Level Order & Shortest Paths
+    Because you never dequeue a node until all of its same-distance peers have been dequeued, BFS naturally computes the minimum number of edges from the start to every other reachable node (in an unweighted graph).
+  
+  - 4.3 Queue Mechanics
+    - Enqueue the start.
+  
+    - Loop:
+    
+        node = queue.popleft()
+        
+        Visit it (result.append(node))
+        
+    - Enqueue each unvisited neighbor and mark it visited immediately.
+    
+    - This ensures each vertex enters the queue exactly once, so work is O(V + E).
+
+5. Complexity Analysis
+	
+  - DFS (all types) -> Time Complexity:	O(V + E), Space Complexity: O(V) for visited + O(V) call stack
+  - BFS	-> Time Complexity: O(V + E),	Space Complexity: O(V) for visited + O(V) queue
+  
+    V = number of vertices
+    
+    E = number of edges
+  
+  Both run in linear time relative to the size of the graph.
+
+6. When & Why to Use Each
+  - DFS
+  
+      Detect cycles.
+      
+      Topological sorting (on DAGs).
+      
+      Connectivity checks (find connected components).
+      
+      Maze generation, puzzle solving (backtracking).
+      
+  - BFS
+  
+      Shortest path in unweighted graphs.
+      
+      Minimum number of moves (e.g., word-ladder puzzles).
+      
+      Level-order tasks (broadcasting in networks).
