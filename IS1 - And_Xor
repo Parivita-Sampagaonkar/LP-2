@@ -1,0 +1,236 @@
+Code:
+
+# Original string, with a newline between Hello and World
+s = "Hello\nWorld"
+
+# Function to transform a string by applying a bitwise operation with 127
+def transform(text, op):
+    """
+    text:   input string
+    op:     either '&' for AND or '^' for XOR
+    Returns: transformed string
+    """
+    result_chars = []
+    for ch in text:
+        code = ord(ch)              # get ASCII code
+        if op == '&':
+            new_code = code & 127   # bitwise AND with 127
+        elif op == '^':
+            new_code = code ^ 127   # bitwise XOR with 127
+        else:
+            raise ValueError("Unsupported operation: choose '&' or '^'")
+        result_chars.append(chr(new_code))
+    return ''.join(result_chars)
+
+# Apply both AND and XOR
+and_transformed = transform(s, '&')
+xor_transformed = transform(s, '^')
+
+# Display results; use repr so that newline and non-printables are visible
+print("Original string:   ", repr(s))
+print("After AND with 127: ", repr(and_transformed))
+print("After XOR with 127: ", repr(xor_transformed))
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/and_xor.py"
+Original string:    'Hello\nWorld'
+After AND with 127:  'Hello\nWorld'
+After XOR with 127:  '7\x1a\x13\x13\x10u(\x10\r\x13\x1b'
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS>
+
+
+Explanation of Code Logic:
+1. Defining the original string
+python
+Copy
+Edit
+s = "Hello\nWorld"
+We create a Python string s containing the characters:
+
+'H', 'e', 'l', 'l', 'o'
+
+A newline character '\n'
+
+'W', 'o', 'r', 'l', 'd'
+
+In memory this is a sequence of 11 characters; the \n will make “World” appear on the next line if printed normally.
+
+2. The transform function
+python
+Copy
+Edit
+def transform(text, op):
+    """
+    text: input string
+    op:   either '&' for AND or '^' for XOR
+    Returns: transformed string
+    """
+    result_chars = []
+    for ch in text:
+        code = ord(ch)        # (a) get the character’s ASCII code
+        if op == '&':
+            new_code = code & 127   # (b1) bitwise AND with 127 (0b01111111)
+        elif op == '^':
+            new_code = code ^ 127   # (b2) bitwise XOR with 127
+        else:
+            raise ValueError("Unsupported operation: choose '&' or '^'")
+        result_chars.append(chr(new_code))   # (c) convert back to a character
+    return ''.join(result_chars)            # (d) build the final string
+2.1. Why ord and chr?
+ord(ch) takes a single-character string and returns its integer Unicode (ASCII) codepoint.
+
+E.g. ord('H') → 72, ord('\n') → 10.
+
+chr(new_code) does the reverse: yields the one-character string whose codepoint is new_code.
+
+2.2. The two bitwise operations
+Bitwise AND (code & 127)
+
+127 in binary is 0b01111111.
+
+ANDing with 127 effectively forces the highest bit of an 8-bit byte to zero, leaving bits 0–6 unchanged.
+
+For standard ASCII (0–127), this usually leaves printable characters the same, but if you had extended bytes (>127) it would clear their “high” bit.
+
+Bitwise XOR (code ^ 127)
+
+XOR flips exactly those bits that are 1 in 127’s binary form (0b01111111), i.e. it inverts the lower 7 bits of the code.
+
+This usually turns printable characters into various punctuation or non-printable control codes.
+
+3. Building the transformed strings
+python
+Copy
+Edit
+and_transformed = transform(s, '&')
+xor_transformed = transform(s, '^')
+We call transform twice:
+
+Once with op='&', producing and_transformed
+
+Once with op='^', producing xor_transformed
+
+4. Displaying the results
+python
+Copy
+Edit
+print("Original string:   ", repr(s))
+print("After AND with 127: ", repr(and_transformed))
+print("After XOR with 127: ", repr(xor_transformed))
+repr(...) prints a string’s representation, escaping special or non-printable characters.
+
+E.g. repr("Hello\nWorld") shows "Hello\nWorld" rather than splitting lines.
+
+This makes it clear exactly which bytes ended up where, even if they’re control characters or unprintable.
+
+5. Example for one character
+Take the very first character, 'H':
+
+ord('H') → 72 (0b01001000)
+
+72 & 127 → 72 (0b01001000), so chr(72) → 'H' (unchanged)
+
+72 ^ 127 → 55 (0b00110111), so chr(55) → '7'
+
+So in the “AND” output you still see 'H', but in the “XOR” output the 'H' becomes '7'.
+
+6. Putting it all together
+We defined a single, clear helper function transform that handles both operations.
+
+We kept the main script body minimal: declare the string, call the function twice, and print results.
+
+No external libraries are needed—just Python’s built-ins.
+
+That’s the entire logic! Let me know if you’d like any part elaborated further.
+
+
+Theory:
+
+1. Characters as Integers
+Character encoding
+Every character—letters, digits, punctuation, even control codes like newline—has a numeric code. In the classic ASCII system, codes run from 0 to 127. For example:
+
+'H' → 72
+
+'\n' (newline) → 10
+
+'0' → 48
+
+ord() and chr()
+Python’s ord(c) ↔ integer lets you go from a one-character string to its code.
+Python’s chr(i) ↔ character does the reverse.
+This mirrors C’s char (really an integer type) and how you might use a char * pointer to a buffer of bytes.
+
+2. Binary Representation
+Bits and bytes
+Each ASCII code is stored in 8 bits (1 byte). For instance, 72 in binary is
+
+Copy
+Edit
+  0b01001000
+where the leftmost bit is the “most significant” (bit 7) and the rightmost is the “least significant” (bit 0).
+
+3. Bitwise AND (&)
+Truth table for two bits:
+
+A	B	A & B
+0	0	0
+0	1	0
+1	0	0
+1	1	1
+
+Masking
+When you do code & 127, you’re AND’ing with
+
+Copy
+Edit
+  127 → 0b01111111
+so you force bit 7 to zero while leaving bits 0–6 unchanged.
+
+If the original code was already < 128 (i.e. standard ASCII), &127 does nothing.
+
+If you had an “extended” byte ≥128, it would strip off that high bit.
+
+4. Bitwise XOR (^)
+Truth table:
+
+A	B	A ^ B
+0	0	0
+0	1	1
+1	0	1
+1	1	0
+
+Toggling bits
+XOR with 1 flips the bit; XOR with 0 leaves it alone.
+When you do code ^ 127 (0b01111111), you invert bits 0–6.
+
+The operation is invertible: if x = a ^ 127, then a = x ^ 127 again.
+
+5. Putting It Together
+Loop through each character in the string.
+
+Convert it to its numeric code (ord).
+
+Apply the bitwise mask (&127) or toggle operation (^127).
+
+Convert back to a character (chr).
+
+Reassemble all these new characters into a transformed string.
+
+6. Why This Matters
+Data masking: AND’ing with a mask is a classic way to isolate or clear certain bits (e.g., extracting flags).
+
+Simple obfuscation: XOR’ing is the basis of many stream ciphers—flip bits with a secret key, then flip them back to decrypt.
+
+Control characters: You’ll see things like '\n' (newline) show up in the output; using repr() in the print lets you see those escapes explicitly rather than having them change lines.
+
+Example Walk-through for 'H' (code 72)
+Binary: 01001000
+
+& 01111111 → 01001000 (still 72 → 'H')
+
+^ 01111111 → 00110111 (55 → '7')
+
+So AND leaves 'H' unchanged, but XOR turns it into '7'.
+
+By understanding characters as numbers and using simple bitwise operations, you gain fine-grained control over exactly which bits you keep, clear, or flip—fundamental tools in everything from graphics and compression to cryptography and network protocols.
