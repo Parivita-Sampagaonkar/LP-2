@@ -1,0 +1,281 @@
+Code:
+
+def find(parent, i):
+    """Path‐compressed find."""
+    if parent[i] != i:
+        parent[i] = find(parent, parent[i])
+    return parent[i]
+
+def union(parent, x, y):
+    """Union by attaching y’s root under x’s root."""
+    xroot = find(parent, x)
+    yroot = find(parent, y)
+    parent[yroot] = xroot
+
+def kruskal(edges, V):
+    """
+    edges: list of (u, v, w)
+    V: number of vertices (assumed labeled 1…V)
+    Returns: (mst_edges, total_weight)
+    """
+    # Initially each vertex is its own parent
+    parent = list(range(V+1))
+    # Sort edges by weight
+    edges.sort(key=lambda e: e[2])
+
+    mst = []
+    total = 0
+
+    for u, v, w in edges:
+        # Only add if u and v are in different components
+        if find(parent, u) != find(parent, v):
+            union(parent, u, v)
+            mst.append((u, v, w))
+            total += w
+
+    return mst, total
+
+def main():
+    V = int(input("Enter number of vertices: "))
+    E = int(input("Enter number of edges: "))
+
+    edges = []
+    for _ in range(E):
+        u, v, w = map(int, input("Enter edge (u v w): ").split())
+        edges.append((u, v, w))
+
+    mst, cost = kruskal(edges, V)
+
+    print("\nEdges in the MST:")
+    for u, v, w in mst:
+        print(f"{u} – {v} : {w}")
+    print("Total cost:", cost)
+
+if __name__ == "__main__":
+    main()
+
+Output:
+
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/greedy_kruskal.py"
+Enter number of vertices: 6
+Enter number of edges: 9
+Enter edge (u v w): 1 2 7
+Enter edge (u v w): 1 3 8
+Enter edge (u v w): 2 3 3
+Enter edge (u v w): 2 5 6
+Enter edge (u v w): 3 4 3
+Enter edge (u v w): 3 5 4
+Enter edge (u v w): 4 5 2
+Enter edge (u v w): 4 6 2
+Enter edge (u v w): 5 6 5
+
+Edges in the MST:
+4 – 5 : 2
+4 – 6 : 2
+2 – 3 : 3
+3 – 4 : 3
+1 – 2 : 7
+Total cost: 17
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI>
+
+Explanation of Code Logic:
+
+1. find(parent, i)
+  - Performs “find with path compression” in the disjoint-set (union-find) structure.
+  
+    def find(parent, i):
+        """Path-compressed find."""
+        if parent[i] != i:
+            parent[i] = find(parent, parent[i])
+        return parent[i]
+  
+  - Parameters
+    -> parent: a list where parent[v] is the current representative (root) of vertex v.
+    -> i: the vertex whose set-representative we want.
+  
+  - Base case
+    -> If parent[i] == i, then i is its own root, so we return i.
+  
+  - Recursive step + path compression
+    -> If parent[i] != i, then i is not the root.
+    -> We call find(parent, parent[i]) to find the ultimate root.
+  
+  - Path compression: we then set parent[i] directly to that root so that future find(i) calls are O(1) on average.
+
+  - Return
+    -> Always returns the root of the set containing i.
+
+2. union(parent, x, y)
+  - Merges the two sets containing x and y by linking one root under the other.
+  
+    def union(parent, x, y):
+        """Union by attaching y’s root under x’s root."""
+        xroot = find(parent, x)
+        yroot = find(parent, y)
+        parent[yroot] = xroot
+  
+  - Find each root
+    -> xroot = find(parent, x)
+    -> yroot = find(parent, y)
+  
+  - Merge
+    -> We simply point parent[yroot] = xroot.
+    -> This makes xroot the representative of the combined set.
+    -> (Because of path compression in find, this is efficient even without union-by-rank.)
+
+3. kruskal(edges, V)
+  - Constructs the Minimum Spanning Tree (MST) using Kruskal’s greedy algorithm.
+  
+    def kruskal(edges, V):
+        """
+        edges: list of (u, v, w)
+        V: number of vertices (1…V)
+        Returns: (mst_edges, total_weight)
+        """
+        # 1) Initialize each vertex to be its own parent
+        parent = list(range(V+1))
+    
+        # 2) Sort all edges by ascending weight
+        edges.sort(key=lambda e: e[2])
+    
+        mst = []
+        total = 0
+    
+        # 3) Process edges in order of increasing weight
+        for u, v, w in edges:
+            # 3a) If u and v are in different sets, adding this edge won't make a cycle
+            if find(parent, u) != find(parent, v):
+                union(parent, u, v)       # 3b) Merge their sets
+                mst.append((u, v, w))     # 3c) Include this edge in the MST
+                total += w                # 3d) Add its weight to the total
+    
+        return mst, total
+  
+  - Detailed steps:
+    -> parent = list(range(V+1))
+      --> Creates [0,1,2,…,V].
+      --> We’ll ignore index 0 so that vertices naturally label 1…V.
+    -> edges.sort(key=lambda e: e[2])
+      --> Orders the list of (u,v,w) tuples by the weight w, smallest first.
+    -> Iterate through each edge
+      --> Cycle check: find(parent, u) != find(parent, v) ensures u and v are currently in different connected components, so adding (u,v) won’t form a cycle.
+      --> Union: merge their components so future edges know these vertices are now connected.
+      --> Record edge in mst list and add w to total.
+    -> Return
+      --> mst: the list of edges chosen by Kruskal’s algorithm
+      --> total: the sum of their weights
+
+4. main()
+  - Handles all user I/O and ties everything together.
+  
+    def main():
+        V = int(input("Enter number of vertices: "))
+        E = int(input("Enter number of edges: "))
+    
+        edges = []
+        for _ in range(E):
+            u, v, w = map(int, input("Enter edge (u v w): ").split())
+            edges.append((u, v, w))
+    
+        mst, cost = kruskal(edges, V)
+    
+        print("\nEdges in the MST:")
+        for u, v, w in mst:
+            print(f"{u} – {v} : {w}")
+        print("Total cost:", cost)
+  
+  - Read inputs
+    -> V: how many vertices (assumed labeled 1 through V).
+    -> E: how many edges the user will specify.
+  
+  - Collect edges
+    -> Loop E times, each time reading three integers u v w.
+    -> Append the tuple (u, v, w) to the edges list.
+  
+  - Compute MST
+    -> Call kruskal(edges, V) → gets back the chosen mst edges and their cost.
+  
+  - Display results
+    -> Iterate through mst, printing each edge in the format u – v : w.
+    -> Print the Total cost: of the MST.
+
+5. Entrypoint Guard
+  
+    if __name__ == "__main__":
+        main()
+  - Ensures that main() runs only when you execute this script directly, not if you import its functions from another module.
+
+Overall Flow
+  - User enters number of vertices and edges, then lists all edges with weights.
+  - kruskal sorts those edges by weight and adds them one by one—greedily picking the smallest edge that doesn’t create a cycle.
+  - Union-find (find + union) keeps track of which vertices are already connected, supporting cycle detection in nearly-constant time thanks to path compression.
+  - Finally, the script prints the MST’s edges in ascending order of inclusion and the sum of their weights.
+  - This straightforward, procedural structure uses only plain functions and lists—no classes—making Kruskal’s MST easy to read and understand.
+
+
+Theory:
+
+1. Graphs, Spanning Trees, and Minimum Spanning Trees
+  - Graph Basics
+    -> A graph 
+        G=(V,E) consists of a set of vertices 
+        V and edges 
+        E, where each edge 
+        (u,v) may carry a weight w.
+  
+  - In our problem, vertices are labeled 
+    -> 1…V, and edges are given as triples (u,v,w).
+  
+  - Spanning Tree
+    -> A tree is an acyclic, connected graph.
+    -> A spanning tree of G is a tree that includes all vertices of 
+        G (but only a subset of edges)—so it has exactly 
+        ∣V∣−1 edges and connects every pair of vertices without any cycles.
+  
+  - Minimum Spanning Tree (MST)
+    -> Among all possible spanning trees of a weighted graph, an MST is one whose total edge-weight sum is minimum.
+    -> MSTs are fundamental in network design (e.g., laying cable at minimal cost), clustering, and approximate algorithms.
+
+2. Greedy Paradigm and MST Properties
+  - Greedy Strategy
+    -> Make the locally optimal choice at each step (e.g., pick the lightest remaining edge) with the hope that this leads to a global optimum.
+    -> Kruskal’s algorithm embodies this: repeatedly add the smallest-weight edge that doesn’t form a cycle, until you have ∣V∣−1 edges.
+  
+  - Cycle Property
+    -> If you look at any cycle in the graph, the heaviest edge in that cycle cannot belong to any MST.
+    -> Equivalently, it’s always safe to exclude the largest edge of a cycle; so when Kruskal avoids edges that would form a cycle, it never misses the optimal tree.
+  
+  - Cut Property
+    -> For any partition (“cut”) of V into two disjoint subsetsS and V∖S, the lightest edge crossing that cut must belong to every MST.
+    -> Kruskal’s algorithm, by always selecting the global minimum-edge available, will eventually pick that lightest cut-edge when its endpoints reside in different components.
+
+3. Kruskal’s Algorithm Outline
+  - Sort edges by ascending weight
+  - Initialize a forest of single‐vertex trees (no edges chosen yet).
+  - Iterate through the sorted edges, and for each edge (u,v):
+      -> If u and v lie in different trees (i.e., adding (u,v) won’t create a cycle), select u,v) into the MST and merge their trees.
+      -> Else skip it.
+      -> Stop when you have ∣V∣−1 edges in the MST.
+      -> Because edges are processed in increasing order, every selection is safe by the cut property, and skipping cycle-forming edges respects the cycle property.
+
+4. Disjoint‐Set (Union–Find) Data Structure
+  - Efficiently tracking which vertices lie in which trees (or “components”) is critical:
+    -> Representation
+      --> Each vertex has a parent pointer; following parents leads to a root that identifies the component.
+          find(x)
+      --> Returns the component‐root of x.
+  - With path compression, every node on the find‐path gets hooked directly under the root, flattening the tree and making subsequent finds very fast (amortized nearly O(1)).
+  - union(x,y)
+    -> Links the root of one component under the root of the other, merging them into one.
+    -> Variants like union by rank can also attach the smaller‐tree root under the larger, but path compression alone suffices for good practical performance.
+    ->Combined, find and union support cycle‐checks and merges in effectively amortized inverse-Ackermann time per operation—practically constant.
+
+5. Complexity Analysis
+  - Sorting edges: O(ElogE).
+  - Union–Find operations: nearly O(1) each; total O(Eα(V)), where α is the inverse-Ackermann function (grows extremely slowly).
+  - Overall: O(ElogE), which is optimal for sparse graphs and efficient for dense ones too.
+
+6. Correctness and Optimality
+  - Greedy choice guaranteed correct by the cut and cycle properties.
+  - Termination after selecting exactly ∣V∣−1 edges yields a spanning tree.
+  - Minimality follows because any deviation (e.g., omitting a selected edge and including a heavier one) can be shown to increase total weight.
