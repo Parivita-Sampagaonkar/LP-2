@@ -1,0 +1,530 @@
+Code:
+
+import networkx as nx
+import matplotlib.pyplot as plt
+
+def is_safe(graph, color, v, c):
+    """
+    Check if we can color vertex v with color c:
+    no neighbor of v may already have color c.
+    """
+    for nbr in graph[v]:
+        if color[nbr] == c:
+            return False
+    return True
+
+def backtrack_color(graph, M, color, v):
+    """
+    Try to color vertex v (0-based).  
+    - graph: adjacency dict {vertex: [neighbors]}.  
+    - M: max number of colors.  
+    - color: current partial coloring list of length V (0=uncolored).  
+    Returns True as soon as a full coloring is found.
+    """
+    V = len(color)
+    # If we've colored all vertices, success!
+    if v == V:
+        return True
+
+    # Try each color 1..M
+    for c in range(1, M+1):
+        if is_safe(graph, color, v, c):
+            color[v] = c
+            # Recurse to next vertex
+            if backtrack_color(graph, M, color, v+1):
+                return True
+            # Undo & try next color
+            color[v] = 0
+
+    # No valid color for v → backtrack
+    return False
+
+def graph_coloring(graph, M):
+    """
+    Wrapper to set up and call backtracking.
+    Returns a list color[0..V-1] or None if no solution.
+    """
+    V = len(graph)
+    color = [0]*V
+    if backtrack_color(graph, M, color, 0):
+        return color
+    else:
+        return None
+
+def main():
+    # 1) Read input
+    V = int(input("Enter number of vertices: "))
+    E = int(input("Enter number of edges: "))
+    graph = {i: [] for i in range(V)}
+    for _ in range(E):
+        u, v = map(int, input("Enter edge (u v): ").split())
+        u -= 1
+        v -= 1
+        # assume user uses 0-based vertices; if 1-based, subtract 1 here
+        graph[u].append(v)
+        graph[v].append(u)
+
+    M = int(input("Enter maximum number of colors: "))
+
+    # 2) Solve
+    coloring = graph_coloring(graph, M)
+    if coloring is None:
+        print(f"No valid coloring with ≤ {M} colors.")
+        return
+
+    print("Found coloring:", coloring)
+
+    # 3) Plot with networkx + matplotlib
+    G = nx.Graph()
+    G.add_nodes_from(range(V))
+    for u in graph:
+        for v in graph[u]:
+            if u < v:
+                G.add_edge(u, v)
+
+    pos = nx.spring_layout(G)              # positions for all nodes
+    node_colors = coloring                 # integers 1..M
+
+    # draw nodes, mapping colors 1..M to a colormap
+    nx.draw_networkx_nodes(
+        G, pos,
+        node_color=node_colors,
+        cmap=plt.cm.get_cmap('tab20', M),
+        vmin=1, vmax=M,
+        node_size=600
+    )
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_labels(G, pos)
+
+    plt.title(f"Graph coloring with {M} colors")
+    plt.axis('off')
+    plt.show()
+
+if __name__ == "__main__":
+    main()
+
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/AI/csp_graphcolor.py"
+Enter number of vertices: 7
+Enter number of edges: 11
+Enter edge (u v): 1 4
+Enter edge (u v): 1 5
+Enter edge (u v): 1 6
+Enter edge (u v): 4 6
+Enter edge (u v): 5 6
+Enter edge (u v): 6 7
+Enter edge (u v): 2 7
+Enter edge (u v): 3 7
+Enter edge (u v): 2 3
+Enter edge (u v): 4 2
+Enter edge (u v): 5 3
+Enter maximum number of colors: 3
+Found coloring: [1, 1, 2, 3, 3, 2, 3]
+c:\Users\Parivita S\OneDrive\Desktop\LP2\AI\csp_graphcolor.py:90: MatplotlibDeprecationWarning: The get_cmap function was deprecated in Matplotlib 3.7 and will be removed in 3.11. Use ``matplotlib.colormaps[name]`` or ``matplotlib.colormaps.get_cmap()`` or ``pyplot.get_cmap()`` instead.
+  cmap=plt.cm.get_cmap('tab20', M),
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\AI>
+
+Explanation of Code Logic:
+
+1. Imports
+python
+Copy
+Edit
+import networkx as nx
+import matplotlib.pyplot as plt
+networkx (nx) is a Python library for creating, manipulating, and drawing graphs.
+
+matplotlib.pyplot (plt) is used here to render the graph visually.
+
+2. Safety Check for Coloring
+python
+Copy
+Edit
+def is_safe(graph, color, v, c):
+    """
+    Check if we can color vertex v with color c:
+    no neighbor of v may already have color c.
+    """
+    for nbr in graph[v]:
+        if color[nbr] == c:
+            return False
+    return True
+Parameters
+
+graph: a dict mapping each vertex index → list of its neighboring vertices.
+
+color: a list where color[i] is the current color assigned to vertex i (0 if uncolored).
+
+v: the vertex we want to try coloring.
+
+c: the candidate color (an integer from 1 up to M).
+
+Loop through neighbors
+
+for nbr in graph[v]: iterates over every vertex adjacent to v.
+
+Conflict check
+
+If any neighbor nbr already has color[nbr] == c, then assigning c to v would create a conflict, so return False.
+
+Safe to color
+
+If none of the neighbors uses c, then return True.
+
+3. Backtracking with Implicit Branch-and-Bound
+python
+Copy
+Edit
+def backtrack_color(graph, M, color, v):
+    """
+    Try to color vertex v (0-based).  
+    - graph: adjacency dict {vertex: [neighbors]}.  
+    - M: max number of colors.  
+    - color: current partial coloring list of length V (0=uncolored).  
+    Returns True as soon as a full coloring is found.
+    """
+    V = len(color)
+    # If we've colored all vertices, success!
+    if v == V:
+        return True
+Parameters
+
+graph, color as before.
+
+M: the maximum number of colors allowed.
+
+v: the index of the current vertex we’re attempting to color (starts at 0).
+
+Termination condition
+
+If v == V, it means we have assigned colors to vertices 0 through V−1 successfully. Return True to signal success.
+
+python
+Copy
+Edit
+    # Try each color 1..M
+    for c in range(1, M+1):
+        if is_safe(graph, color, v, c):
+            color[v] = c
+            # Recurse to next vertex
+            if backtrack_color(graph, M, color, v+1):
+                return True
+            # Undo & try next color
+            color[v] = 0
+
+    # No valid color for v → backtrack
+    return False
+Color loop
+
+We iterate c from 1 up to M.
+
+Safety check
+
+Call is_safe(...). If True, assign that color: color[v] = c.
+
+Recurse
+
+Call backtrack_color(...) for v+1.
+
+If the recursive call returns True, it means it found a valid coloring for the rest of the graph, so we immediately return True all the way up.
+
+Undo (backtrack)
+
+If recursion failed, reset color[v] = 0 and try the next color.
+
+Failure
+
+If none of the M colors fits, return False, signaling the caller to backtrack further.
+
+4. Wrapper Function
+python
+Copy
+Edit
+def graph_coloring(graph, M):
+    """
+    Wrapper to set up and call backtracking.
+    Returns a list color[0..V-1] or None if no solution.
+    """
+    V = len(graph)
+    color = [0]*V
+    if backtrack_color(graph, M, color, 0):
+        return color
+    else:
+        return None
+Initialize
+
+V = len(graph)
+
+color = [0]*V creates a list of zeros (all vertices uncolored initially).
+
+Start backtracking
+
+Call backtrack_color(graph, M, color, 0), starting at vertex 0.
+
+Return result
+
+If it returns True, color is now a valid coloring; return that list.
+
+Otherwise return None to indicate no valid coloring exists within M colors.
+
+5. Main Program Flow
+python
+Copy
+Edit
+def main():
+    # 1) Read input
+    V = int(input("Enter number of vertices: "))
+    E = int(input("Enter number of edges: "))
+    graph = {i: [] for i in range(V)}
+Read
+
+V: number of vertices (we’ll use indices 0 through V−1).
+
+E: number of edges.
+
+Build adjacency dict
+
+graph = {0:[], 1:[], …, V−1:[]} to hold each vertex’s neighbor list.
+
+python
+Copy
+Edit
+    for _ in range(E):
+        u, v = map(int, input("Enter edge (u v): ").split())
+        u -= 1
+        v -= 1
+        graph[u].append(v)
+        graph[v].append(u)
+Read edges
+
+For each of the E edges, read two integers u and v.
+
+Subtract 1 to convert from 1-based input to our 0-based indexing.
+
+Append v into graph[u] and u into graph[v], since the graph is undirected.
+
+python
+Copy
+Edit
+    M = int(input("Enter maximum number of colors: "))
+Read
+
+M: the maximum number of distinct colors allowed.
+
+python
+Copy
+Edit
+    # 2) Solve
+    coloring = graph_coloring(graph, M)
+    if coloring is None:
+        print(f"No valid coloring with ≤ {M} colors.")
+        return
+
+    print("Found coloring:", coloring)
+Compute
+
+Call graph_coloring(...).
+
+If it returns None, print that no solution exists and exit.
+
+Otherwise, print the coloring list, where coloring[i] is the color of vertex i.
+
+6. Plotting the Colored Graph
+python
+Copy
+Edit
+    # 3) Plot with networkx + matplotlib
+    G = nx.Graph()
+    G.add_nodes_from(range(V))
+    for u in graph:
+        for v in graph[u]:
+            if u < v:
+                G.add_edge(u, v)
+Create a networkx.Graph() object G.
+
+Add all V nodes.
+
+Add each undirected edge exactly once (if u < v avoids duplication).
+
+python
+Copy
+Edit
+    pos = nx.spring_layout(G)              # positions for all nodes
+    node_colors = coloring                 # integers 1..M
+Compute pos, a dictionary mapping each node → (x,y) coordinates via a force-directed layout.
+
+Assign node_colors to be the integer color of each node.
+
+python
+Copy
+Edit
+    # draw nodes, mapping colors 1..M to a colormap
+    nx.draw_networkx_nodes(
+        G, pos,
+        node_color=node_colors,
+        cmap=plt.cm.get_cmap('tab20', M),
+        vmin=1, vmax=M,
+        node_size=600
+    )
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_labels(G, pos)
+Draw nodes
+
+node_color=node_colors passes the color list.
+
+We pick tab20 (a 20-color qualitative map) sliced to M distinct colors, and set vmin=1, vmax=M so that colors 1…M map evenly across that palette.
+
+Draw edges and labels
+
+nx.draw_networkx_edges(...) renders each line.
+
+nx.draw_networkx_labels(...) places the node index as text on each node.
+
+python
+Copy
+Edit
+    plt.title(f"Graph coloring with {M} colors")
+    plt.axis('off')
+    plt.show()
+Finalize plot
+
+Add a title, hide axes, and display the window.
+
+7. Entrypoint Guard
+python
+Copy
+Edit
+if __name__ == "__main__":
+    main()
+Ensures main() runs only when you execute this script directly, not if you import these functions elsewhere.
+
+
+Theory:
+
+1. Constraint Satisfaction Problems (CSP)
+A CSP consists of:
+
+Variables
+A finite set 
+{X1,X2,…,Xn}.
+In graph coloring, each vertex 
+v is a variable Xv.
+
+Domains
+Each variable Xi has a domain Di of possible values.
+Here Dv ={1,2,…,M}, the available colors.
+
+Constraints
+Relations specifying which combinations of values are allowed.
+For graph coloring, the only constraint is:
+
+If there’s an edge 
+(u,v), then Xu​ ≠ Xv
+​
+
+A solution is an assignment Xi=di for each i that satisfies all constraints.
+
+2. Graph Coloring as a CSP
+Objective: assign one of 
+M colors to each vertex so that no two adjacent vertices share the same color.
+
+If you can color with 
+M colors, the graph’s chromatic number 
+χ(G) satisfies 
+χ(G)≤M.
+
+Deciding whether 
+χ(G)≤M is NP-complete in general, so we expect worst-case exponential behavior.
+
+3. Backtracking Search
+Backtracking is a depth-first, systematic way to explore the space of partial assignments:
+
+Order of assignment
+We assign colors to vertices one at a time (in our code, vertex 0,1,2,…).
+
+Consistency check (“is_safe”)
+Before assigning color 
+c to vertex 
+v, we check all already-colored neighbors.
+If any neighbor has color 
+c, that choice would violate the constraint   Xu​ ≠ Xv , so we skip it.
+
+Recursion and “undo”
+
+Assign 
+Xv=c.
+
+Recurse to color 
+v+1.
+
+If deeper recursion fails, revert Xv to unassigned and try the next color.
+
+Termination
+
+Success: when every vertex is colored (depth = n), we’ve found a complete, valid assignment.
+Failure: if no color works for the current vertex, we backtrack.
+
+This explores a search tree whose nodes are partial assignments. Each branch corresponds to choosing a color for the next vertex.
+
+4. Branch and Bound in CSP
+Branch: at each vertex we branch on all 
+M possible colors.
+
+Bound (pruning):
+
+Constraint propagation via the safety check prunes any branch that would immediately violate an edge constraint.
+
+Although we don’t compute a numeric “bound” here, this is the same idea: we cut off entire subtrees of the search whenever a local constraint fails.
+
+More advanced CSP solvers add further bounding techniques (forward-checking, arc-consistency, heuristics for variable and value ordering), but the core idea remains:
+
+Prune as early as possible when you detect that a partial assignment can never lead to a full solution.
+
+5. Complexity
+Without pruning, there are 
+MV
+  possible colorings to try (
+V vertices, 
+M colors each).
+
+Each assignment step checks at most 
+deg(v) neighbors, so one node expansion costs 
+O(deg(v)).
+
+With pruning, you avoid exploring any branch that immediately violates a constraint—dramatically reducing the effective search space on many graphs, but in the worst case still exponential 
+O(MV).
+
+6. Practical Enhancements (not in the code)
+Variable ordering (MRV)
+Color the vertex with the fewest legal colors left first (“minimum remaining values”).
+
+Value ordering (LCV)
+Try colors in an order that least constrains neighbors.
+
+Forward checking / Arc consistency
+After assigning Xv, eliminate that color from all adjacent vertices’ domains; if any domain becomes empty, backtrack immediately.
+
+These heuristics tend to turn intractable-looking instances into quickly solvable ones, but the underlying backtracking + pruning remains the same.
+
+7. From CSP to Visualization
+Once a valid assignment is found:
+
+We interpret each variable’s value as a node color.
+
+Using NetworkX + matplotlib, we lay out the graph in 2D and color each node according to its assigned integer.
+
+This final step turns the abstract assignment into an easily‐interpretable picture.
+
+In Summary
+Model graph coloring as a CSP (variables = vertices, domains = colors, constraints = “adjacent ≠ same color”).
+
+Search with backtracking: assign one variable at a time, checking consistency immediately, and undoing (“backtracking”) upon failure.
+
+Branch-and-bound arises via immediate pruning of any partial coloring that violates an edge constraint.
+
+Complexity remains exponential in the worst case, but simple pruning often suffices for moderate-size problems.
+
+Visualization with NetworkX turns the solution into an intuitive colored graph plot.
+
+These concepts—CSP modeling, backtracking search, and constraint-based pruning—form the foundation of many classical AI and operations-research algorithms for combinatorial problems like graph coloring.
