@@ -1,0 +1,290 @@
+Code:
+
+import math
+
+def get_column_order(key):
+    """
+    Given a key (string), return a list of column indices
+    in the order they should be read for encryption.
+    """
+    pairs = list(enumerate(key))
+    pairs_sorted = sorted(pairs, key=lambda x: (x[1], x[0]))
+    return [index for index, char in pairs_sorted]
+
+def encrypt(plaintext, key):
+    """
+    Columnar Transposition Encryption.
+      1. Break plaintext into rows of length len(key),
+         padding with '_' if needed.
+      2. Read columns in the order defined by sorted key.
+    """
+    cols = len(key)
+    rows = math.ceil(len(plaintext) / cols)
+    padded = plaintext.ljust(rows * cols, '_')  # pad with underscores
+
+    grid = [padded[i*cols:(i+1)*cols] for i in range(rows)]
+    order = get_column_order(key)
+
+    ciphertext = ''
+    for col in order:
+        for row in range(rows):
+            ciphertext += grid[row][col]
+    return ciphertext
+
+def decrypt(ciphertext, key):
+    """
+    Columnar Transposition Decryption.
+      1. Figure out how many rows and columns.
+      2. Fill an empty grid column by column, in the sorted key order.
+      3. Read out the plaintext row-wise and strip any trailing '_'.
+    """
+    cols = len(key)
+    rows = math.ceil(len(ciphertext) / cols)
+    order = get_column_order(key)
+
+    grid = [[''] * cols for _ in range(rows)]
+    idx = 0
+    for col in order:
+        for row in range(rows):
+            grid[row][col] = ciphertext[idx]
+            idx += 1
+
+    plaintext = ''.join(''.join(row) for row in grid)
+    return plaintext.rstrip('_')  # remove trailing underscores
+
+if __name__ == "__main__":
+    pt = input("Enter plaintext: ")
+    key = input("Enter key (any letters): ")
+    ct = encrypt(pt, key)
+    print("\nEncrypted text:", ct)
+    pt2 = decrypt(ct, key)
+    print("Decrypted text:", pt2)
+
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/transposition.py"
+Enter plaintext: KRISHNA RANJAN
+Enter key (any letters): NICK
+
+Encrypted text: IAN_RNANS J_KHRA
+Decrypted text: KRISHNA RANJAN
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/transposition.py"
+Enter plaintext: PARIVITA SAMPAGAONKAR
+Enter key (any letters): BUTTERFLY
+
+Encrypted text: PSKVA_TA_AO_IG_RMRIP_AAA N_
+Decrypted text: PARIVITA SAMPAGAONKAR
+
+
+Explanation of Code Logic:
+Let’s walk through each part of the program so you can see exactly how it implements columnar transposition with underscore-padding. We’ll cover:
+
+Determining the column order from the key
+
+Preparing (and padding) the plaintext
+
+Building and reading the grid for encryption
+
+Reconstructing and un-padding for decryption
+
+1. Key ordering: get_column_order(key)
+python
+Copy
+Edit
+pairs   = list(enumerate(key))
+pairs_sorted = sorted(pairs, key=lambda x: (x[1], x[0]))
+return [index for index, char in pairs_sorted]
+enumerate(key) gives you a list of (original_index, character) pairs.
+
+sorted(..., key=lambda x:(char, index)) orders those pairs first by character (alphabetically) and breaks ties by original index.
+
+The returned list of indices tells you in which sequence to read your columns.
+
+e.g. key = "ZEBRA"
+
+enumerate → [(0,'Z'), (1,'E'), (2,'B'), (3,'R'), (4,'A')]
+
+sorted by letter → [(4,'A'), (2,'B'), (1,'E'), (3,'R'), (0,'Z')]
+
+order = [4, 2, 1, 3, 0]
+
+2. Encryption: encrypt(plaintext, key)
+python
+Copy
+Edit
+cols   = len(key)
+rows   = math.ceil(len(plaintext) / cols)
+padded = plaintext.ljust(rows * cols, '_')
+grid   = [padded[i*cols:(i+1)*cols] for i in range(rows)]
+order  = get_column_order(key)
+
+ciphertext = ''
+for col in order:
+    for row in range(rows):
+        ciphertext += grid[row][col]
+return ciphertext
+Compute grid size
+
+cols = number of columns = length of key
+
+rows = smallest integer ≥ (plaintext length ÷ cols)
+
+Pad with underscores so that rows * cols exactly fits.
+
+e.g. length 10, 4 columns → 3 rows would hold only 12 slots, so pad to 12.
+
+Build the grid row-by-row:
+
+ini
+Copy
+Edit
+padded = "HELLOWORLD__"
+cols   = 4
+rows   = 3
+grid = [
+  "HELL",   # padded[0:4]
+  "OWOR",   # padded[4:8]
+  "LD__"    # padded[8:12]
+]
+Read out by columns in sorted-key order
+
+If order = [1,3,0,2], you first read column 1 of every row, then column 3, then 0, then 2.
+
+Appending each character in turn builds the cipher text.
+
+3. Decryption: decrypt(ciphertext, key)
+python
+Copy
+Edit
+cols   = len(key)
+rows   = math.ceil(len(ciphertext) / cols)
+order  = get_column_order(key)
+
+grid = [[''] * cols for _ in range(rows)]
+idx  = 0
+for col in order:
+    for row in range(rows):
+        grid[row][col] = ciphertext[idx]
+        idx += 1
+
+plaintext = ''.join(''.join(row) for row in grid)
+return plaintext.rstrip('_')
+Same grid dimensions as in encryption.
+
+Empty grid of the right size is created.
+
+Fill column-by-column in exactly the same order you used to read them out:
+
+python
+Copy
+Edit
+# Imagine ciphertext = "E1E2E3…"
+for each col in order:
+  for each row:
+    grid[row][col] = next ciphertext character
+Read the grid row-wise (the inverse of how you built it in encrypt).
+
+Strip trailing underscores that you originally added as padding.
+
+4. Putting it altogether
+Symmetry: encryption writes rows & reads columns; decryption writes columns & reads rows.
+
+Padding character must match in both encrypt/decrypt ('_' here).
+
+Key-based column order provides the “secret” pattern that scrambles and re-assembles the text.
+
+This technique is simple—no fancy libraries required—but it’s the basis for more advanced block- and grid-based ciphers. Let me know if you’d like to trace through a concrete example step by step!
+
+
+Theory:
+
+1. Transposition vs. Substitution
+Substitution ciphers (like Caesar or ROT13) replace each letter with another letter.
+
+Transposition ciphers keep every letter the same but reorder them.
+
+In both cases you obscure the message, but transposition preserves letter-frequency (so an analyst can still see how many “E”s or “T”s appear).
+
+2. Columnar Transposition: The Grid Model
+Write your plaintext out in rows of a fixed width (number of columns).
+
+Read the ciphertext out by columns in some secret order.
+
+Decryption is simply the inverse: fill in columns in that order, then read rows.
+
+Visually for key length 4 and plaintext “ MEET AT NOON ” (spaces omitted):
+
+mathematica
+Copy
+Edit
+   columns →  0   1   2   3
+   -----------------------
+row 0        M   E   E   T
+row 1        A   T   N   O
+row 2        O   N   _   _
+(The underscores are padding, which we’ll cover next.)
+
+3. The Key as a Permutation
+Your key (e.g. "ZEBRA") isn’t used like a modern AES key—it’s used to sort column headings.
+
+By enumerating each letter with its original index and then sorting alphabetically, you derive a permutation of column indices.
+
+Example: key “ZEBRA” → letters sorted A B E R Z → column order [4,2,1,3,0].
+
+That permutation drives both encryption (reading columns) and decryption (filling columns).
+
+4. Why Padding Is Necessary
+If the message length isn’t a perfect multiple of the column count, your last row would be “short.”
+
+You pad with a harmless filler (here _) so every row is full:
+
+Ensures the grid is rectangular.
+
+Guarantees that during decryption you know exactly how many cells to fill.
+
+On decryption you simply strip off those trailing padding characters.
+
+5. Encryption Process (Conceptually)
+Compute number of rows = ⌈message length ÷ columns⌉.
+
+Pad the message to exactly rows × columns.
+
+Write the padded text row-by-row into the grid.
+
+Read out the grid column-by-column in the secret key order.
+
+The result is your ciphertext—a jumbled reordering of original characters.
+
+6. Decryption Process (Inverse)
+Compute the same grid dimensions from ciphertext length and key.
+
+Create an empty grid of size rows × columns.
+
+Fill the grid column-by-column in the same key order with ciphertext characters.
+
+Read the grid row-by-row to reconstruct the padded plaintext.
+
+Strip off padding to recover the exact original message.
+
+7. Security and Strengths/Weaknesses
+Strengths
+
+Very simple to implement.
+
+Preserves letter frequencies (so it resists simple frequency masking).
+
+Weaknesses
+
+Vulnerable to anagramming and crib-dragging attacks: an attacker knowing or guessing parts of the plaintext can test column orders quickly.
+
+Modern cryptanalysis easily breaks pure transposition—these days it’s mostly educational or combined with other ciphers.
+
+8. When and Why You’d Use It
+Historical ciphers: widely used in the 19th and early 20th centuries (e.g., by military telegraphs).
+
+Teaching: excellent for learning how permutations and invertible operations work.
+
+Combined systems: sometimes used as one layer within a more complex cipher (e.g. product ciphers that mix substitution and transposition).
+
+In a Nutshell
+At its core, this code is all about treating text as a matrix of characters, then using a simple permutation (the key) to reorder columns. Padding guarantees the math works out cleanly in both directions, and the decryption is nothing more than running the same steps in reverse. This combination of grids, permutations, and padding is the heart of the classic columnar transposition cipher.
