@@ -1,0 +1,379 @@
+Code:
+
+# Make sure to install PyCryptodome first:
+#    pip install pycryptodome
+
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+
+def des_encrypt_decrypt():
+    # 1. Get an 8-byte key from the user
+    key = input("Enter an 8-character key: ").encode()
+    if len(key) != 8:
+        print("Error: Key must be exactly 8 characters (8 bytes).")
+        return
+
+    # 2. Get the plaintext to encrypt
+    plaintext = input("Enter plaintext: ").encode()
+
+    # 3. Choose mode
+    mode = input("Choose mode (ECB or CBC): ").strip().upper()
+    if mode not in ('ECB', 'CBC'):
+        print("Error: Unsupported mode.")
+        return
+
+    # 4. Encrypt
+    if mode == 'CBC':
+        iv = get_random_bytes(8)  # DES block size is 8 bytes
+        cipher = DES.new(key, DES.MODE_CBC, iv)
+        ciphertext = cipher.encrypt(pad(plaintext, DES.block_size))
+        # Prepend IV so we can decrypt later
+        output = iv + ciphertext
+    else:  # ECB
+        cipher = DES.new(key, DES.MODE_ECB)
+        output = cipher.encrypt(pad(plaintext, DES.block_size))
+
+    print("\nCiphertext (hex):", output.hex())
+
+    # 5. Decrypt
+    if mode == 'CBC':
+        iv_dec  = output[:8]
+        ct_only = output[8:]
+        decipher = DES.new(key, DES.MODE_CBC, iv_dec)
+        decrypted = unpad(decipher.decrypt(ct_only), DES.block_size)
+    else:
+        decipher = DES.new(key, DES.MODE_ECB)
+        decrypted = unpad(decipher.decrypt(output), DES.block_size)
+
+    print("Decrypted text:  ", decrypted.decode())
+
+if __name__ == "__main__":
+    des_encrypt_decrypt()
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/des.py"
+>> 
+Enter an 8-character key: DESKey12
+Enter plaintext: Attack at dawn
+Choose mode (ECB or CBC): ECB
+
+Ciphertext (hex): 72b33e597e10193e95d24afba701a929
+Decrypted text:   Attack at dawn
+
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/des.py"
+Enter an 8-character key: DESKey12      
+Enter plaintext: Attack at dawn
+Choose mode (ECB or CBC): CBC
+
+Ciphertext (hex): c91b45db342624c9010abd5683824926b9b3ce8fa360c047
+Decrypted text:   Attack at dawn
+
+
+Explanation of Code Logic:
+1. Imports and What They Provide
+python
+Copy
+Edit
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+Crypto.Cipher.DES
+This is PyCryptodome’s implementation of the classic Data Encryption Standard.
+
+Block size: 8 bytes
+
+Key size: 8 bytes
+
+You create a cipher object via DES.new(key, mode, [iv]).
+
+Crypto.Util.Padding
+Provides PKCS#7-style padding helpers so your plaintext fits exactly into 8-byte blocks:
+
+pad(data: bytes, block_size: int) → bytes
+
+unpad(padded: bytes, block_size: int) → bytes
+
+Crypto.Random.get_random_bytes(n)
+A simple, secure RNG for cryptographic use.
+
+Here we use it to generate an Initialization Vector (IV) of length 8 bytes for CBC mode.
+
+2. Entry Point: des_encrypt_decrypt()
+This single function handles both encryption and decryption in one run, guided by user inputs.
+
+2.1. Getting and Validating the Key
+python
+Copy
+Edit
+key = input("Enter an 8-character key: ").encode()
+if len(key) != 8:
+    print("Error: Key must be exactly 8 characters (8 bytes).")
+    return
+Why 8 bytes?
+DES uses a fixed 56-bit key plus 8 bits of parity (total 64 bits = 8 bytes).
+
+We .encode() the user’s input string into a bytes object.
+
+We immediately check length to avoid runtime errors deep inside the cipher routines.
+
+2.2. Reading Plaintext
+python
+Copy
+Edit
+plaintext = input("Enter plaintext: ").encode()
+Convert the user’s text to bytes.
+
+DES works on bytes, not Python str.
+
+2.3. Choosing Mode (ECB vs. CBC)
+python
+Copy
+Edit
+mode = input("Choose mode (ECB or CBC): ").strip().upper()
+if mode not in ('ECB', 'CBC'):
+    print("Error: Unsupported mode.")
+    return
+ECB (Electronic Codebook)
+
+Simplest mode: each 8-byte block encrypted independently.
+
+Weakness: identical plaintext blocks → identical ciphertext blocks.
+
+CBC (Cipher-Block Chaining)
+
+More secure: each plaintext block is XOR’d with the previous ciphertext block before encryption.
+
+Requires an IV for the very first block.
+
+3. Encryption
+python
+Copy
+Edit
+if mode == 'CBC':
+    iv = get_random_bytes(8)               # securely generate an IV
+    cipher = DES.new(key, DES.MODE_CBC, iv)
+    ciphertext = cipher.encrypt(pad(plaintext, DES.block_size))
+    output = iv + ciphertext               # so we can extract IV later
+else:  # ECB
+    cipher = DES.new(key, DES.MODE_ECB)
+    output = cipher.encrypt(pad(plaintext, DES.block_size))
+Padding
+
+pad(plaintext, DES.block_size) applies PKCS#7 padding so len(data) % 8 == 0.
+
+If your plaintext is already a multiple of 8 bytes, it still adds a full block of padding to allow unambiguous removal.
+
+Creating the cipher
+
+DES.new(key, mode, iv) returns a cipher object with encrypt() and decrypt() methods.
+
+ECB doesn’t use an IV parameter; CBC requires one.
+
+Encrypting
+
+cipher.encrypt(padded_bytes) processes the entire padded message in one go, returning ciphertext bytes.
+
+Storing the IV (CBC only)
+
+We prepend iv to the ciphertext so that decryption can re-use it.
+
+Any party receiving the message must know the IV—but the IV is not secret.
+
+4. Outputting Ciphertext
+python
+Copy
+Edit
+print("\nCiphertext (hex):", output.hex())
+.hex() converts the raw bytes into a human-readable hexadecimal string.
+
+This is purely a display convenience—real protocols might send raw bytes or Base64 instead.
+
+5. Decryption
+python
+Copy
+Edit
+if mode == 'CBC':
+    iv_dec  = output[:8]
+    ct_only = output[8:]
+    decipher = DES.new(key, DES.MODE_CBC, iv_dec)
+    decrypted = unpad(decipher.decrypt(ct_only), DES.block_size)
+else:
+    decipher = DES.new(key, DES.MODE_ECB)
+    decrypted = unpad(decipher.decrypt(output), DES.block_size)
+
+print("Decrypted text:  ", decrypted.decode())
+Extract IV (CBC)
+
+The first 8 bytes of output are the IV we prepended.
+
+Re-create the cipher object with the same key and IV (if CBC).
+
+decipher.decrypt(...) undoes the block encryption, returning padded plaintext bytes.
+
+unpad(..., block_size) removes the PKCS#7 padding to yield the original message.
+
+.decode() turns the bytes back into a Python str for printing.
+
+6. The if __name__ == "__main__": Guard
+python
+Copy
+Edit
+if __name__ == "__main__":
+    des_encrypt_decrypt()
+Ensures that only when you run this script directly does it prompt you and execute.
+
+If you import this file as a module elsewhere, the encryption function won’t automatically run.
+
+Recap of Key Library Functions
+Function	Purpose
+DES.new(key, MODE, [iv])	Create a DES cipher object in the specified mode (ECB/CBC).
+cipher.encrypt(data)	Encrypts data in full-block chunks (must be padded).
+cipher.decrypt(data)	Decrypts data in full-block chunks.
+pad(data, block_size)	Apply PKCS#7 padding so length ≡ 0 mod block_size.
+unpad(data, block_size)	Strip PKCS#7 padding, validating that it’s well-formed.
+get_random_bytes(n)	Generate n cryptographically secure random bytes (used for CBC IV).
+bytes.hex()	Convert raw bytes to a hex string for easy display or logging.
+
+With these pieces—block cipher modes, padding, IV management, and simple user I/O—you’ve built a fully functional DES encryptor/decryptor in under thirty lines of code. Let me know if you’d like to dive deeper into any of these building blocks!
+
+
+Theory:
+1. Symmetric Key Cryptography and Block Ciphers
+Symmetric key cryptography uses the same secret key for both encryption and decryption.
+
+A block cipher encrypts fixed‐size blocks of data (here, 64 bits) independently (in ECB mode) or in chained fashion (in CBC, etc.).
+
+DES (Data Encryption Standard) is one of the earliest and most well‐known block ciphers.
+
+2. Core Structure of DES
+DES is built around a Feistel network of 16 rounds. Each round applies a function to half of the data and then swaps halves:
+
+Initial Permutation (IP)
+
+A fixed, public reordering of the 64 input bits.
+
+Purely for historical/hardware reasons; has no cryptographic strength itself.
+
+Splitting
+
+After IP, the 64 bits are split into a left half (L₀) and right half (R₀), each 32 bits.
+
+16 Rounds of Feistel Function
+For round i = 1…16:
+
+Key mixing: the 56-bit secret key is shifted and permuted to produce a 48-bit round subkey Kᵢ.
+
+Expansion (E-box): Rᵢ₋₁ (32 bits) is expanded to 48 bits by repeating and reordering bits.
+
+XOR: the expanded Rᵢ₋₁ is XOR’d with the subkey Kᵢ.
+
+Substitution (S-boxes): the 48 bits are divided into eight 6-bit chunks; each chunk is fed into a nonlinear S-box that outputs 4 bits (total 32 bits).
+
+Permutation (P-box): the 32 bits from the S-boxes are permuted to “spread” bits to different positions.
+
+Feistel step:
+
+mathematica
+Copy
+Edit
+Lᵢ = Rᵢ₋₁
+Rᵢ = Lᵢ₋₁ ⊕ P(S(E(Rᵢ₋₁) ⊕ Kᵢ))
+Final Permutation (IP⁻¹)
+
+The inverse of the initial permutation, reassembling the two halves into a 64-bit ciphertext block.
+
+3. Key Schedule
+The 56-bit key is entered as 8 bytes; each byte includes one parity bit, so only 56 bits carry key material.
+
+Key scheduling involves:
+
+Permuted Choice 1 (PC-1): drop parity bits and permute the remaining 56 bits.
+
+Rotation: split into two 28-bit halves, rotate each by 1 or 2 bits (depending on the round).
+
+Permuted Choice 2 (PC-2): select and permute 48 bits from the rotated halves to form Kᵢ.
+
+Because each round’s subkey is different, DES achieves confusion (complex key mixing) and diffusion (spreading bit changes).
+
+4. Modes of Operation
+While DES itself defines only the per-block transformation, real‐world usage wraps it in a mode of operation:
+
+ECB (Electronic Codebook)
+
+Encrypts each 64-bit block independently.
+
+Weakness: identical plaintext blocks → identical ciphertext blocks (reveals patterns).
+
+CBC (Cipher Block Chaining)
+
+Before encrypting a block, you XOR it with the previous ciphertext block.
+
+The first block uses an Initialization Vector (IV) instead of previous ciphertext.
+
+IV must be unpredictable (but not secret) to prevent replay/pattern attacks.
+
+Our code lets you choose ECB or CBC:
+
+python
+Copy
+Edit
+cipher = DES.new(key, DES.MODE_ECB)
+# or
+cipher = DES.new(key, DES.MODE_CBC, iv)
+5. Padding: PKCS#7
+Because DES operates on 8-byte blocks, messages not a multiple of 8 bytes must be padded. We use PKCS#7 padding:
+
+If you need n padding bytes (1 ≤ n ≤ 8), you append n copies of the byte n.
+
+On decryption, you inspect the last byte to see how many bytes to strip.
+
+This scheme is unambiguous even if the plaintext ends in bytes matching their numeric values.
+
+In code:
+
+python
+Copy
+Edit
+from Crypto.Util.Padding import pad, unpad
+
+padded = pad(plaintext, DES.block_size)       # encryption
+data    = unpad(decrypted, DES.block_size)    # decryption
+6. Putting It All Together in PyCryptodome
+Key and IV handling
+
+User enters an 8-byte key for DES.
+
+For CBC, we generate an 8-byte IV via get_random_bytes(8) and prepend it to the ciphertext.
+
+Cipher creation
+
+python
+Copy
+Edit
+cipher    = DES.new(key, mode, iv if CBC else None)
+ciphertext = cipher.encrypt(pad(plaintext, DES.block_size))
+Decryption inverse
+
+python
+Copy
+Edit
+decipher  = DES.new(key, mode, iv_extracted)
+decrypted = unpad(decipher.decrypt(ct_bytes), DES.block_size)
+7. Security Considerations
+Key size: 56 bits is too small by modern standards—brute-force attacks are trivial.
+
+Weak keys: DES has a handful of “weak” or “semi-weak” keys that produce degenerate subkey patterns.
+
+Successors: 3DES (applying DES three times with multiple keys) and later AES have largely supplanted DES.
+
+Use today: DES is primarily of historical or educational interest; do not use it for new systems requiring strong security.
+
+In Summary
+DES is a classic 16-round Feistel block cipher operating on 64 bits with a 56-bit key.
+
+Modes (ECB, CBC) adapt DES for messages longer than one block and add chaining/IV for security.
+
+Padding schemes like PKCS#7 let you handle arbitrary message lengths.
+
+Libraries like PyCryptodome encapsulate all these details, letting you focus on key, IV, and mode configuration rather than the internal bit‐twiddling of round functions.
