@@ -1,0 +1,415 @@
+Code:
+
+# To run this, first install PyCryptodome:
+#    pip install pycryptodome
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+
+def aes_encrypt_decrypt():
+    # 1. Get a key of valid length (16, 24 or 32 bytes)
+    key = input("Enter key (16/24/32 characters): ").encode()
+    if len(key) not in (16, 24, 32):
+        print("Error: Key must be 16, 24 or 32 characters long.")
+        return
+
+    # 2. Get plaintext
+    plaintext = input("Enter plaintext: ").encode()
+
+    # 3. Choose mode
+    mode = input("Choose mode (ECB or CBC): ").strip().upper()
+    if mode not in ("ECB", "CBC"):
+        print("Error: Unsupported mode.")
+        return
+
+    # 4. Encrypt
+    if mode == "CBC":
+        iv = get_random_bytes(AES.block_size)               # 16-byte IV
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        ct_bytes = cipher.encrypt(pad(plaintext, AES.block_size))
+        ciphertext = iv + ct_bytes                          # prepend IV
+    else:  # ECB
+        cipher = AES.new(key, AES.MODE_ECB)
+        ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
+
+    print("\nCiphertext (hex):", ciphertext.hex())
+
+    # 5. Decrypt
+    if mode == "CBC":
+        iv_dec = ciphertext[:AES.block_size]
+        ct_only = ciphertext[AES.block_size:]
+        decipher = AES.new(key, AES.MODE_CBC, iv_dec)
+        pt_bytes = unpad(decipher.decrypt(ct_only), AES.block_size)
+    else:
+        decipher = AES.new(key, AES.MODE_ECB)
+        pt_bytes = unpad(decipher.decrypt(ciphertext), AES.block_size)
+
+    print("Decrypted text:  ", pt_bytes.decode())
+
+if __name__ == "__main__":
+    aes_encrypt_decrypt()
+
+
+Output:
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/aes.py"
+Enter key (16/24/32 characters): ThisIsA16ByteKey
+Enter plaintext: Hello World!!!!!
+Choose mode (ECB or CBC): ECB
+
+Ciphertext (hex): ab2a8906d06f271dbc89c9134f6f58d07df60b7686f7b78674e20152c4751a60
+Decrypted text:   Hello World!!!!!
+PS C:\Users\Parivita S\OneDrive\Desktop\LP2\IS> & "C:/Users/Parivita S/AppData/Local/Programs/Python/Python311/python.exe" "c:/Users/Parivita S/OneDrive/Desktop/LP2/IS/aes.py"
+Enter key (16/24/32 characters): ThisIsA16ByteKey
+Enter plaintext: Hello World!!!!!
+Choose mode (ECB or CBC): CBC
+
+Ciphertext (hex): cd5eaa2927cd9f40183e588446ab1c8a7c3d6f7e2dcece759329d96fae2935419b74a12ad07ac306726feddb1ad0e2b0
+Decrypted text:   Hello World!!!!!
+
+
+Explanation of Code Logic:
+1. Imports and What They Give Us
+python
+Copy
+Edit
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+AES
+
+From Crypto.Cipher, this implements the AES block cipher (Advanced Encryption Standard).
+
+You’ll use AES.new(key, mode, [iv]) to create an object with .encrypt() and .decrypt() methods.
+
+pad / unpad
+
+From Crypto.Util.Padding, these implement PKCS#7 padding.
+
+pad(data, block_size): if your data isn’t a multiple of block_size (16 bytes for AES), it appends 1–16 bytes, each equal to the number of padding bytes.
+
+unpad(padded_data, block_size): strips that padding off after decryption (and checks it’s well-formed).
+
+get_random_bytes(n)
+
+From Crypto.Random, this gives you cryptographically secure random bytes.
+
+We use it to generate the IV (Initialization Vector) for CBC mode.
+
+2. Entry Point: aes_encrypt_decrypt()
+Everything happens inside this one function:
+
+python
+Copy
+Edit
+def aes_encrypt_decrypt():
+    # … all the code …
+Because it’s called under the if __name__ == "__main__": guard, the routine runs only when you execute the script directly.
+
+3. Key Input & Validation
+python
+Copy
+Edit
+key = input("Enter key (16/24/32 characters): ").encode()
+if len(key) not in (16, 24, 32):
+    print("Error: Key must be 16, 24 or 32 characters long.")
+    return
+input(...).encode()
+
+Reads your UTF-8 string and turns it into a bytes object.
+
+AES keys must be raw bytes, not Python str.
+
+Length check
+
+AES supports key sizes of 128, 192, or 256 bits, i.e. 16, 24, or 32 bytes.
+
+We enforce that here, so the library won’t raise a confusing internal error later.
+
+4. Plaintext Input
+python
+Copy
+Edit
+plaintext = input("Enter plaintext: ").encode()
+Again, we .encode() so our data is bytes.
+
+AES works on raw byte blocks, never on Python’s Unicode strings directly.
+
+5. Mode Selection
+python
+Copy
+Edit
+mode = input("Choose mode (ECB or CBC): ").strip().upper()
+if mode not in ("ECB", "CBC"):
+    print("Error: Unsupported mode.")
+    return
+ECB (Electronic Codebook)
+
+Each 16-byte block is encrypted independently.
+
+Weakness: identical plaintext blocks → identical ciphertext blocks.
+
+CBC (Cipher-Block Chaining)
+
+Before encrypting each block, AES XORs it with the previous ciphertext block.
+
+The first block uses an unpredictable IV instead.
+
+This removes patterns and makes repeated blocks look different.
+
+6. Encryption Flow
+python
+Copy
+Edit
+if mode == "CBC":
+    iv = get_random_bytes(AES.block_size)             # AES.block_size == 16
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    ct_bytes = cipher.encrypt(pad(plaintext, AES.block_size))
+    ciphertext = iv + ct_bytes                        # prepend IV for decryption
+else:
+    cipher = AES.new(key, AES.MODE_ECB)
+    ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
+Padding
+
+pad(plaintext, AES.block_size) ensures len(plaintext) % 16 == 0.
+
+Even if your input is already a multiple of 16 bytes, PKCS#7 always adds a full block of padding so decryption can unambiguously remove it.
+
+Creating the cipher object
+
+AES.new(key, AES.MODE_CBC, iv)
+
+Mode = CBC, supplies the 16-byte IV.
+
+AES.new(key, AES.MODE_ECB)
+
+Mode = ECB, which doesn’t use an IV.
+
+Encrypting
+
+cipher.encrypt(padded_bytes) processes all blocks in one call and returns the raw ciphertext bytes.
+
+IV handling (CBC only)
+
+We prepend the IV to the ciphertext so the decryptor can extract it.
+
+The IV is not secret—just unpredictable.
+
+7. Displaying Ciphertext
+python
+Copy
+Edit
+print("\nCiphertext (hex):", ciphertext.hex())
+.hex() turns the raw bytes into a human-readable hexadecimal string.
+
+In real protocols, you might transmit raw bytes or Base64 instead.
+
+8. Decryption Flow
+python
+Copy
+Edit
+if mode == "CBC":
+    iv_dec = ciphertext[:AES.block_size]
+    ct_only = ciphertext[AES.block_size:]
+    decipher = AES.new(key, AES.MODE_CBC, iv_dec)
+    pt_bytes = unpad(decipher.decrypt(ct_only), AES.block_size)
+else:
+    decipher = AES.new(key, AES.MODE_ECB)
+    pt_bytes = unpad(decipher.decrypt(ciphertext), AES.block_size)
+
+print("Decrypted text:  ", pt_bytes.decode())
+Extract IV (CBC only)
+
+The first 16 bytes of ciphertext → iv_dec.
+
+The rest → ct_only.
+
+Re-create the cipher with the same parameters (key, mode, IV).
+
+decipher.decrypt(...) returns padded plaintext bytes.
+
+unpad(..., AES.block_size) strips off the PKCS#7 padding, validating its correctness.
+
+.decode() turns the resulting bytes back into a Python string for display.
+
+9. The Main Guard
+python
+Copy
+Edit
+if __name__ == "__main__":
+    aes_encrypt_decrypt()
+Ensures that if you import this file as a module elsewhere, nothing runs automatically.
+
+Only when you execute python this_script.py does it prompt and encrypt/decrypt.
+
+Core Library Functions at a Glance
+Call	Purpose
+AES.new(key, MODE, [iv])	Build a cipher object for AES in the given mode (ECB, CBC, etc.).
+cipher.encrypt(data)	Encrypts data; expects length % block_size == 0 (hence the padding).
+cipher.decrypt(data)	Decrypts data; returns padded plaintext.
+pad(data, block_size)	Applies PKCS#7 padding so length ≡ 0 mod block_size.
+unpad(data, block_size)	Removes PKCS#7 padding and validates it.
+get_random_bytes(n)	Generates n cryptographically secure random bytes (for IVs, nonces).
+bytes.hex()	Returns a hex-string representation of the raw bytes.
+bytes.decode()	Converts bytes back into a Unicode string (UTF-8 by default).
+
+Why This Matters
+AES is the modern standard for symmetric encryption—fast in software and hardware, secure when used with strong keys and IVs.
+
+Modes like CBC add essential security beyond “vanilla” ECB.
+
+Padding schemes let you handle any message length, not just exact multiples of the block size.
+
+PyCryptodome wraps all the low-level bit and byte manipulations into a clean, Python-friendly API.
+
+With this breakdown, you should now know exactly how each line works, why it’s there, and which library function it calls. Let me know if any specific part needs further elaboration!
+
+
+Theory:
+1. AES as a Symmetric Block Cipher
+Symmetric encryption means the same secret key is used for both encrypting and decrypting data.
+
+A block cipher processes fixed-length blocks of data—in AES’s case, 128 bits (16 bytes) at a time.
+
+AES (Advanced Encryption Standard) was standardized by NIST in 2001 and has become the world’s predominant block cipher.
+
+2. Key Sizes, Block Size, and Number of Rounds
+Key Size (bits)	Key Length (bytes)	Rounds
+128	16	10
+192	24	12
+256	32	14
+
+Block size is fixed at 128 bits, regardless of key length.
+
+Number of rounds grows with key size to increase security against brute-force and cryptanalytic attacks.
+
+3. The AES Round Structure
+Each of the R rounds (except the final) applies four fundamental transformations to a 4×4 byte matrix (the “state”):
+
+SubBytes
+
+A non-linear byte-for-byte substitution using a single, precomputed 8×8 S-box.
+
+Provides confusion: makes the relationship between key bits and ciphertext bits complex.
+
+ShiftRows
+
+A simple row-wise cyclic shift:
+
+Row 0: no shift
+
+Row 1: 1-byte left
+
+Row 2: 2-bytes left
+
+Row 3: 3-bytes left
+
+Provides diffusion: spreads byte influence across columns.
+
+MixColumns
+
+Treats each column as a four-term polynomial over GF(2⁸) and multiplies by a fixed polynomial.
+
+Further diffusion: combines bytes within each column so that a single input byte affects all four output bytes.
+
+AddRoundKey
+
+XORs the current state with a round-specific 128-bit subkey derived from the main key.
+
+The only step that introduces key material in each round.
+
+The final round omits MixColumns (to simplify computing the inverse during decryption) but still performs SubBytes, ShiftRows, and AddRoundKey.
+
+4. Key Expansion (Key Schedule)
+The original AES key is expanded into (R + 1) round keys (each 128 bits).
+
+At each step the algorithm:
+
+RotWord: rotates four-byte word.
+
+SubWord: applies the same S-box as SubBytes.
+
+Rcon: XORs in a round constant to break symmetry.
+
+This ensures that each round key is non-linearly and distinctly derived, thwarting related-key attacks.
+
+5. Modes of Operation
+Block ciphers encrypt one block at a time. Modes define how blocks chain together to securely encrypt messages longer than one block:
+
+ECB (Electronic Codebook)
+
+Encrypts each block independently.
+
+Weakness: identical plaintext blocks → identical ciphertext blocks (reveals patterns).
+
+CBC (Cipher-Block Chaining)
+
+Before encrypting, each plaintext block is XOR’d with the previous ciphertext block.
+
+The first block uses an unpredictable Initialization Vector (IV) instead of previous ciphertext.
+
+Prevents repeating‐plaintext patterns and gives semantic security when the IV is random and public.
+
+Our code uses PyCryptodome’s AES.MODE_ECB or AES.MODE_CBC to select between these modes.
+
+6. Padding with PKCS#7
+Since most messages aren’t an exact multiple of 16 bytes, we append padding:
+
+If n bytes of padding are needed (1 ≤ n ≤ 16), append n copies of the byte value n.
+
+On decryption, reading the last byte tells you how many bytes to strip.
+
+Unambiguous even if the plaintext naturally ends in bytes identical to their numeric value.
+
+Functions used:
+
+python
+Copy
+Edit
+pad(plaintext_bytes, AES.block_size)
+unpad(padded_bytes, AES.block_size)
+7. Initialization Vector (IV)
+In CBC mode, the IV must be:
+
+Unpredictable (to prevent attackers from precomputing block outputs),
+
+Publicly known (it’s sent along with the ciphertext, typically prepended).
+
+Our code calls:
+
+python
+Copy
+Edit
+iv = get_random_bytes(AES.block_size)
+to generate a cryptographically secure 16-byte IV, then prepends it so the decryption routine can extract and reuse it.
+
+8. PyCryptodome Abstractions
+API Call	Role
+AES.new(key, MODE, [iv])	Instantiate a cipher object ready for encrypt/decrypt
+cipher.encrypt(padded_plaintext)	Perform the actual AES block‐by‐block encryption
+cipher.decrypt(ciphertext)	Perform the actual AES block‐by‐block decryption
+pad(data, block_size) / unpad(data, block_size)	Handle PKCS#7 padding and its removal
+get_random_bytes(n)	Securely generate random bytes (used for CBC IVs)
+bytes.hex()	Convert binary output to a human-readable hex string
+
+These abstractions let you leverage AES’s full, secure Feistel‐like structure without implementing any of the low-level bitwise arithmetic or finite-field math yourself.
+
+9. Security Considerations
+Key strength: 128 bits and above is considered secure against brute-force today.
+
+Mode selection: never use ECB for more than one block; always favor CBC (with random IV) or more advanced modes (GCM, CTR).
+
+Padding oracle attacks: ensure that decryption routines do not reveal padding errors to attackers.
+
+In Summary
+This Python program encapsulates the core of AES encryption/decryption by:
+
+Accepting a user-specified AES key (16/24/32 bytes).
+
+Padding arbitrary‐length plaintext via PKCS#7.
+
+Encrypting/decrypting in ECB or CBC mode using PyCryptodome’s battle-tested implementation.
+
+Managing IVs and padding correctly to provide confidentiality and basic integrity.
+
+By understanding these building blocks—round structure, key schedule, modes, and padding—you gain insight into why AES remains a cornerstone of modern secure communication.
