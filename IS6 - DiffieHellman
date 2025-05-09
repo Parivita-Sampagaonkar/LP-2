@@ -1,0 +1,390 @@
+Code:
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Diffie–Hellman Demo</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
+    label, button { display: block; margin: 0.5em 0; }
+    span { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Diffie–Hellman Key Exchange</h1>
+
+  <p>Prime (p): <span id="prime">23</span></p>
+  <p>Generator (g): <span id="generator">5</span></p>
+
+  <label>
+    Your secret (a):
+    <input type="number" id="secretA" value="6" min="1">
+  </label>
+
+  <button id="compute">Generate Public Keys & Shared Secret</button>
+
+  <h2>Results</h2>
+  <p>Your public value (A = g<sup>a</sup> mod p): <span id="publicA">–</span></p>
+  <p>Bob’s secret (b, chosen randomly): <span id="secretB">–</span></p>
+  <p>Bob’s public value (B = g<sup>b</sup> mod p): <span id="publicB">–</span></p>
+  <p>Your shared secret (s = B<sup>a</sup> mod p): <span id="sharedA">–</span></p>
+  <p>Bob’s shared secret (s = A<sup>b</sup> mod p): <span id="sharedB">–</span></p>
+
+  <script>
+    // 1. Fixed parameters (small for demo; real use needs large safe primes!)
+    const p = 23n;
+    const g = 5n;
+
+    // 2. Fast modular exponentiation (base^exp mod m) using BigInt
+    function modPow(base, exp, m) {
+      let result = 1n;
+      base %= m;
+      while (exp > 0n) {
+        if (exp & 1n) result = (result * base) % m;
+        exp >>= 1n;
+        base = (base * base) % m;
+      }
+      return result;
+    }
+
+    document
+      .getElementById("compute")
+      .addEventListener("click", () => {
+        // --- Alice’s side (user) ---
+        const a = BigInt(document.getElementById("secretA").value);
+        const A = modPow(g, a, p);               // Alice’s public = g^a mod p
+        document.getElementById("publicA").innerText = A.toString();
+
+        // --- Bob’s side (JavaScript) ---
+        // Pick b randomly in [1, p-2]
+        const b = BigInt( Math.floor(Math.random() * Number(p - 2n)) + 1 );
+        document.getElementById("secretB").innerText = b.toString();
+        const B = modPow(g, b, p);               // Bob’s public = g^b mod p
+        document.getElementById("publicB").innerText = B.toString();
+
+        // --- Shared secret computation ---
+        // Alice computes s = B^a mod p
+        const sA = modPow(B, a, p);
+        // Bob computes   s = A^b mod p
+        const sB = modPow(A, b, p);
+
+        document.getElementById("sharedA").innerText = sA.toString();
+        document.getElementById("sharedB").innerText = sB.toString();
+      });
+  </script>
+</body>
+</html>
+
+
+Output:
+Enter Alice’s secret (a):
+
+Copy
+Edit
+6
+Click “Generate Public Keys & Shared Secret” and you might get:
+
+Field	Value
+Your public value (A = 5⁶ mod 23)	8
+Bob’s secret (b, random in [1,21])	15
+Bob’s public value (B = 5¹⁵ mod 23)	19
+Your shared secret (s = 19⁶ mod 23)	2
+Bob’s shared secret (s = 8¹⁵ mod 23)	2
+
+
+Explanation of Code Logic:
+Below is a walkthrough of every part of the HTML + JavaScript Diffie–Hellman demo, explaining what each line or block does and why it’s needed.
+
+1. The HTML Structure
+html
+Copy
+Edit
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Diffie–Hellman Demo</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
+    label, button { display: block; margin: 0.5em 0; }
+    span { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Diffie–Hellman Key Exchange</h1>
+
+  <p>Prime (p): <span id="prime">23</span></p>
+  <p>Generator (g): <span id="generator">5</span></p>
+
+  <label>
+    Your secret (a):
+    <input type="number" id="secretA" value="6" min="1">
+  </label>
+
+  <button id="compute">Generate Public Keys & Shared Secret</button>
+
+  <h2>Results</h2>
+  <p>Your public value (A = g<sup>a</sup> mod p): <span id="publicA">–</span></p>
+  <p>Bob’s secret (b, chosen randomly): <span id="secretB">–</span></p>
+  <p>Bob’s public value (B = g<sup>b</sup> mod p): <span id="publicB">–</span></p>
+  <p>Your shared secret (s = B<sup>a</sup> mod p): <span id="sharedA">–</span></p>
+  <p>Bob’s shared secret (s = A<sup>b</sup> mod p): <span id="sharedB">–</span></p>
+<span id="prime">23</span> and <span id="generator">5</span>
+We hard-code small prime p=23 and generator g=5 for clarity. In a real system these would be very large.
+
+<input type="number" id="secretA" …>
+This is Alice’s secret 
+𝑎
+a. The user enters a positive integer.
+
+<button id="compute">…</button>
+A button that, when clicked, runs our JavaScript to simulate Bob’s side and compute everything.
+
+Result placeholders (<span id="publicA">, etc.)
+Empty spans where we’ll insert the computed values.
+
+2. The JavaScript: Modular Exponentiation
+js
+Copy
+Edit
+<script>
+  // 1. Fixed parameters (small for demo; real use needs large safe primes!)
+  const p = 23n;
+  const g = 5n;
+
+  // 2. Fast modular exponentiation (base^exp mod m) using BigInt
+  function modPow(base, exp, m) {
+    let result = 1n;
+    base %= m;
+    while (exp > 0n) {
+      if (exp & 1n)            // if the low bit of exp is 1
+        result = (result * base) % m;
+      exp >>= 1n;              // shift exp right by 1 bit
+      base = (base * base) % m;
+    }
+    return result;
+  }
+23n, 5n
+The trailing n makes these JavaScript BigInt literals, so we can do arbitrary‐length integer math without overflow.
+
+modPow
+Efficiently computes base^exp mod m via “exponentiation by squaring.”
+
+We loop while exp > 0.
+
+If the current bit of exp is 1, multiply result by base (mod m).
+
+Square base each iteration and shift exp right one bit.
+
+This runs in O(log exp) multiplications instead of exp multiplications.
+
+3. Wiring Up the Button
+js
+Copy
+Edit
+  document
+    .getElementById("compute")
+    .addEventListener("click", () => {
+      // --- Alice’s side (user) ---
+      const a = BigInt(document.getElementById("secretA").value);
+      const A = modPow(g, a, p);               // A = g^a mod p
+      document.getElementById("publicA").innerText = A.toString();
+
+      // --- Bob’s side (JavaScript) ---
+      // Pick b randomly in [1, p-2]
+      const b = BigInt(
+        Math.floor(Math.random() * Number(p - 2n)) + 1
+      );
+      document.getElementById("secretB").innerText = b.toString();
+      const B = modPow(g, b, p);               // B = g^b mod p
+      document.getElementById("publicB").innerText = B.toString();
+
+      // --- Shared secret computation ---
+      const sA = modPow(B, a, p);              // Alice computes s = B^a mod p
+      const sB = modPow(A, b, p);              // Bob   computes s = A^b mod p
+
+      document.getElementById("sharedA").innerText = sA.toString();
+      document.getElementById("sharedB").innerText = sB.toString();
+    });
+</script>
+Reading Alice’s secret
+
+js
+Copy
+Edit
+const a = BigInt(document.getElementById("secretA").value);
+We grab the user’s number and convert it to a BigInt.
+
+Alice’s public value
+
+js
+Copy
+Edit
+const A = modPow(g, a, p);
+Computes A = gᵃ mod p, then inserts it into the page.
+
+Bob’s secret (b)
+
+js
+Copy
+Edit
+const b = BigInt(
+  Math.floor(Math.random() * Number(p - 2n)) + 1
+);
+We pick an integer b uniformly at random from 1 to p–2.
+
+Converting p–2n to a Number for the random routine is safe here since p is small.
+
+Bob’s public value
+
+js
+Copy
+Edit
+const B = modPow(g, b, p);
+Computes B = gᵇ mod p and displays it.
+
+Shared secret
+
+Alice’s view: sA = Bᵃ mod p
+
+Bob’s view: sB = Aᵇ mod p
+Both yield the same integer s, even though Alice never learns b and Bob never learns a. We display both to confirm the match.
+
+4. Putting It All Together
+Security principle: Discrete exponentiation mod p is easy, but recovering a or b from A = gᵃ mod p is a “hard” discrete log problem (for large p).
+
+Browser demo: We choose tiny values so the math is immediate and visible.
+
+BigInt: Allows JavaScript to handle arbitrarily large integers—essential in real DH where p might be 2048 bits or more.
+
+By structuring the code this way—clear separation of Alice’s steps, Bob’s steps, and the shared-secret check—you can see exactly how Diffie–Hellman lets two parties agree on a secret over an insecure channel without ever transmitting that secret itself.
+
+
+
+Theory:
+1. Modular Arithmetic Basics
+Integers Modulo p
+
+We work in the set { 0, 1, 2, …, p–1 } with arithmetic defined “mod p.”
+
+When you add, subtract or multiply, you reduce the result by taking the remainder on division by p.
+
+Prime Modulus
+
+Choosing p prime ensures that every nonzero element has a unique multiplicative inverse.
+
+The set of nonzero residues mod p, written 𝐙ₚ* = { 1, 2, …, p–1 }, forms a cyclic group under multiplication.
+
+Primitive Root (Generator) g
+
+A generator g is an element of 𝐙ₚ* whose successive powers “hit” every element of 𝐙ₚ* before repeating.
+
+In other words, { g¹, g², …, gᵖ⁻¹ } mod p = all nonzero residues.
+
+This property underpins the Diffie–Hellman exchange.
+
+2. One-Way Functions: Exponentiation vs. Discrete Log
+Fast Exponentiation
+
+Computing gᵃ mod p (even for large exponents) is efficient via “exponentiation by squaring” (our modPow function).
+
+Complexity is on the order of O(log a) modular multiplications.
+
+Discrete Logarithm Problem
+
+Given p, g, and A = gᵃ mod p, recovering a is believed to be computationally hard when p is large (hundreds or thousands of bits).
+
+No known polynomial-time algorithm on classical computers—this asymmetry makes exponentiation a one-way function.
+
+3. The Diffie–Hellman Key Exchange Protocol
+Public Parameters
+
+Prime p and generator g are public and can be known by everyone (including attackers).
+
+Private Secrets
+
+Alice picks a secret a (1 ≤ a ≤ p–2).
+
+Bob picks a secret b (1 ≤ b ≤ p–2).
+
+Public Values
+
+Alice computes A = gᵃ mod p and sends A to Bob.
+
+Bob computes B = gᵇ mod p and sends B to Alice.
+
+Shared Secret Computation
+
+Alice computes s = Bᵃ mod p = (gᵇ)ᵃ mod p = gᵃᵇ mod p
+
+Bob computes s = Aᵇ mod p = (gᵃ)ᵇ mod p = gᵇᵃ mod p
+
+Because exponentiation commutes in the exponent, both get the same s without ever sharing a or b directly.
+
+4. Why It’s Secure
+Eavesdropper’s View
+
+An attacker sees p, g, A = gᵃ, and B = gᵇ.
+
+To compute s = gᵃᵇ, they would need either a or b—i.e. solve the discrete log problem on A or B.
+
+Ephemeral Secrets
+
+In practice, a and b should be drawn fresh for each session (“ephemeral”) so past communications remain secure even if one session’s secret leaks.
+
+Man-in-the-Middle Risk
+
+DH by itself does not authenticate parties—an active attacker could substitute their own public values unless you pair DH with signatures or a PKI.
+
+5. Implementation Details in the Demo
+BigInt Arithmetic
+
+JavaScript’s BigInt type lets us handle arbitrarily large integers without overflow—critical for real DH where p is hundreds of bits.
+
+modPow Function
+
+js
+Copy
+Edit
+function modPow(base, exp, m) { … }
+Implements exponentiation by squaring:
+
+Initialize result = 1.
+
+While exp > 0:
+
+If the current low bit of exp is 1, result = (result * base) % m.
+
+Square base → (base * base) % m.
+
+Shift exp right by one bit.
+
+Returns result = baseᵉᶜ mod m in O(log exp) steps.
+
+Randomness for Bob’s Secret
+
+Although our demo uses a simple Math.random(), a production system must use a cryptographically secure RNG (e.g. window.crypto.getRandomValues) to pick b.
+
+6. Practical Considerations
+Parameter Sizes
+
+Real-world DH uses primes p of at least 2048 bits (≈ 617 decimal digits) to resist index-calculus attacks.
+
+Generators and primes are often chosen together to ensure the group has a large prime-order subgroup, mitigating small-subgroup attacks.
+
+Authenticated Key Exchange
+
+To prevent active man-in-the-middle attacks, you wrap DH in a handshake that verifies identities (e.g. TLS uses certified digital signatures).
+
+Forward Secrecy
+
+Ephemeral DH keys ensure that compromise of long-term keys doesn’t expose past session keys.
+
+In a Nutshell
+Diffie–Hellman leverages the asymmetry between:
+
+Easy: computing exponentials mod p (gᵃ mod p), and
+
+Hard: computing discrete logarithms (recovering a from gᵃ mod p),
+
+to let two parties agree on a shared secret without ever transmitting that secret directly. The demo’s HTML + JS code transparently mirrors those steps—choosing secrets, exponentiating, and verifying that both sides arrive at the same shared key—while abstracting away the low-level number-theory into a concise modPow helper.
